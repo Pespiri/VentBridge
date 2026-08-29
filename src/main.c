@@ -5,7 +5,7 @@
 #include "project_meta.h"
 #include "utilities/log_utils.h"
 
-static const char *MAIN_TAG = "main";
+static const char *TAG = "main";
 
 void app_main(void);
 
@@ -13,10 +13,10 @@ void app_main(void) {
   static const vent_panel_reader_config_t panel_config = VENT_PANEL_READER_CONFIG_DEFAULT;
   static const vent_button_pins_t button_pins = VENT_BUTTON_PINS_DEFAULT;
 
-  LOGN(MAIN_TAG, "-------------   META   -------------");
-  LOGN(MAIN_TAG, "name:           " PROJECT_NAME);
-  LOGN(MAIN_TAG, "firmware:       " FW_VERSION);
-  LOGN(MAIN_TAG, "------------------------------------");
+  LOGN(TAG, "-------------   META   -------------");
+  LOGN(TAG, "name:           " PROJECT_NAME);
+  LOGN(TAG, "firmware:       " FW_VERSION);
+  LOGN(TAG, "------------------------------------");
 
   ESP_ERROR_CHECK(vent_panel_reader_init(&panel_config));
   ESP_ERROR_CHECK(vent_button_control_init(&button_pins));
@@ -24,7 +24,7 @@ void app_main(void) {
   vent_panel_reader_start_task(TASK_PRIORITY_UART_READER);
   vent_button_control_start_task(TASK_PRIORITY_BUTTON_CONTROL);
 
-  LOGN(MAIN_TAG, "%s v%s ready", PROJECT_NAME, FW_VERSION);
+  LOGN(TAG, "%s v%s ready", PROJECT_NAME, FW_VERSION);
 
   ESP_ERROR_CHECK(vent_console_start(TASK_PRIORITY_CONSOLE));
 }

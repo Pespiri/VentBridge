@@ -7,7 +7,7 @@
 #include <freertos/semphr.h>
 #include <string.h>
 
-static const char *const VENT_PANEL_TAG = "vent_panel_reader";
+static const char *const TAG = "vent_panel_reader";
 
 #define PANEL_CHUNK_MAX_LEN     32
 #define PANEL_ONLINE_TIMEOUT_US (3000 * 1000)
@@ -27,7 +27,7 @@ static void apply_decoded_state(const vent_panel_state_t *decoded);
 static void vent_panel_reader_task(void *arg);
 
 void vent_panel_reader_start_task(UBaseType_t priority) {
-  xTaskCreate(vent_panel_reader_task, "vent_panel_reader", 4096, NULL, priority, NULL);
+  xTaskCreate(vent_panel_reader_task, TAG, 4096, NULL, priority, NULL);
 }
 
 vent_panel_state_t vent_panel_reader_get_state(void) {
@@ -80,13 +80,13 @@ static void vent_panel_reader_task(void *arg) {
   uint8_t chunk[PANEL_CHUNK_MAX_LEN];
   uart_event_t event;
 
-  ESP_LOGI(VENT_PANEL_TAG, "panel reader task started");
+  ESP_LOGI(TAG, "panel reader task started");
 
   for (;;) {
     if (xQueueReceive(uart_event_queue, &event, portMAX_DELAY) != pdTRUE) continue;
 
     if (event.type == UART_FIFO_OVF || event.type == UART_BUFFER_FULL) {
-      ESP_LOGW(VENT_PANEL_TAG, "uart overflow (type %d), flushing", (int)event.type);
+      ESP_LOGW(TAG, "uart overflow (type %d), flushing", (int)event.type);
       uart_flush_input(cfg.uart_port);
       xQueueReset(uart_event_queue);
       continue;

@@ -6,12 +6,14 @@
 #include <esp_log.h>
 #include <freertos/queue.h>
 
-static const char *const VENT_BTN_CTRL_TAG = "vent_button_control";
+static const char *const TAG = "vent_button_control";
 
 #define BUTTON_PRESS_MS        120   // 120 milliseconds
 #define BUTTON_STEP_GAP_MS     300   // 300 milliseconds
 #define FILTER_LONG_TIMEOUT_MS 10000 // 10 seconds
 #define FILTER_LONG_POLL_MS    50    // 50 milliseconds
+#define MOVE_SETTLE_TIMEOUT_MS 2000  // 2 seconds
+#define MOVE_SETTLE_POLL_MS    20    // 20 milliseconds
 
 typedef enum BUTTON_CMD_TYPE {
   CMD_PRESS,
@@ -29,6 +31,9 @@ typedef struct BUTTON_CMD {
 
 static QueueHandle_t cmd_queue = NULL;
 static vent_button_pins_t button_pins;
+
+static volatile vent_fan_level_enum_t pending_fan = FAN_LEVEL_UNKNOWN;
+static volatile vent_temp_level_enum_t pending_temp = TEMP_LEVEL_UNKNOWN;
 
 /** @brief Get the GPIO pin associated with a given button
  *
@@ -82,7 +87,7 @@ esp_err_t vent_button_control_init(const vent_button_pins_t *pins) {
 }
 
 void vent_button_control_start_task(UBaseType_t priority) {
-  xTaskCreate(vent_button_control_task, "vent_button_control", 4096, NULL, priority, NULL);
+  xTaskCreate(vent_button_control_task, TAG, 4096, NULL, priority, NULL);
 }
 
 esp_err_t vent_button_control_press(vent_button_enum_t button) {
@@ -92,12 +97,24 @@ esp_err_t vent_button_control_press(vent_button_enum_t button) {
 
 esp_err_t vent_button_control_move_fan_to(vent_fan_level_enum_t target_level) {
   button_cmd_t cmd = {.type = CMD_MOVE_FAN, .target_level = (uint8_t)target_level};
-  return xQueueSend(cmd_queue, &cmd, 0) == pdTRUE ? ESP_OK : ESP_ERR_INVALID_STATE;
+  if (xQueueSend(cmd_queue, &cmd, 0) != pdTRUE) return ESP_ERR_INVALID_STATE;
+  pending_fan = target_level;
+  return ESP_OK;
 }
 
 esp_err_t vent_button_control_move_temp_to(vent_temp_level_enum_t target_level) {
   button_cmd_t cmd = {.type = CMD_MOVE_TEMP, .target_level = (uint8_t)target_level};
-  return xQueueSend(cmd_queue, &cmd, 0) == pdTRUE ? ESP_OK : ESP_ERR_INVALID_STATE;
+  if (xQueueSend(cmd_queue, &cmd, 0) != pdTRUE) return ESP_ERR_INVALID_STATE;
+  pending_temp = target_level;
+  return ESP_OK;
+}
+
+vent_fan_level_enum_t vent_button_control_pending_fan(void) {
+  return pending_fan;
+}
+
+vent_temp_level_enum_t vent_button_control_pending_temp(void) {
+  return pending_temp;
 }
 
 static gpio_num_t pin_for(vent_button_enum_t button) {
@@ -111,7 +128,6 @@ static gpio_num_t pin_for(vent_button_enum_t button) {
     case BUTTON_TEMP_DOWN: return button_pins.temp_down;
 
     // filter control buttons
-    case BUTTON_FILTER:
     case BUTTON_FILTER_LONG: return button_pins.filter;
 
     default: return GPIO_NUM_NC;
@@ -122,7 +138,7 @@ static void press_pulse(vent_button_enum_t button, uint32_t hold_ms) {
   gpio_num_t pin = pin_for(button);
   if (pin == GPIO_NUM_NC) return;
 
-  ESP_LOGD(VENT_BTN_CTRL_TAG, "pulse button %d on GPIO %d for %lums", (int)button, (int)pin, (unsigned long)hold_ms);
+  ESP_LOGD(TAG, "pulse button %d on GPIO %d for %lums", (int)button, (int)pin, (unsigned long)hold_ms);
   vent_gpio_set_state(pin, VENT_GPIO_HIGH);
   vTaskDelay(pdMS_TO_TICKS(hold_ms));
   vent_gpio_set_state(pin, VENT_GPIO_LOW);
@@ -141,7 +157,7 @@ static void press_filter_long(void) {
   }
 
   vent_gpio_set_state(pin, VENT_GPIO_LOW);
-  ESP_LOGD(VENT_BTN_CTRL_TAG, "filter long press released after %lums", (unsigned long)waited_ms);
+  ESP_LOGD(TAG, "filter long press released after %lums", (unsigned long)waited_ms);
 }
 
 static void move_fan_to(vent_fan_level_enum_t target_level) {
@@ -155,6 +171,14 @@ static void move_fan_to(vent_fan_level_enum_t target_level) {
     press_pulse(direction, BUTTON_PRESS_MS);
     if (i + 1 < steps) vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
   }
+
+  // final level is only known once the panel reports it; returning earlier
+  // would let consumers publish the second-to-last level as if the move ended
+  for (uint32_t waited_ms = 0; waited_ms < MOVE_SETTLE_TIMEOUT_MS; waited_ms += MOVE_SETTLE_POLL_MS) {
+    if (vent_panel_reader_get_state().fan_level == target_level) return;
+    vTaskDelay(pdMS_TO_TICKS(MOVE_SETTLE_POLL_MS));
+  }
+  ESP_LOGW(TAG, "fan did not reach level %d", (int)target_level);
 }
 
 static void move_temp_to(vent_temp_level_enum_t target_level) {
@@ -168,6 +192,14 @@ static void move_temp_to(vent_temp_level_enum_t target_level) {
     press_pulse(direction, BUTTON_PRESS_MS);
     if (i + 1 < steps) vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
   }
+
+  // final level is only known once the panel reports it; returning earlier
+  // would let consumers publish the second-to-last level as if the move ended
+  for (uint32_t waited_ms = 0; waited_ms < MOVE_SETTLE_TIMEOUT_MS; waited_ms += MOVE_SETTLE_POLL_MS) {
+    if (vent_panel_reader_get_state().temp_level == target_level) return;
+    vTaskDelay(pdMS_TO_TICKS(MOVE_SETTLE_POLL_MS));
+  }
+  ESP_LOGW(TAG, "temperature did not reach level %d", (int)target_level);
 }
 
 static void vent_button_control_task(void *arg) {
@@ -182,9 +214,11 @@ static void vent_button_control_task(void *arg) {
         break;
       case CMD_MOVE_FAN:
         move_fan_to((vent_fan_level_enum_t)cmd.target_level);
+        if (pending_fan == (vent_fan_level_enum_t)cmd.target_level) pending_fan = FAN_LEVEL_UNKNOWN;
         break;
       case CMD_MOVE_TEMP:
         move_temp_to((vent_temp_level_enum_t)cmd.target_level);
+        if (pending_temp == (vent_temp_level_enum_t)cmd.target_level) pending_temp = TEMP_LEVEL_UNKNOWN;
         break;
     }
   }

@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VENT_CONSOLE_TAG        "vent_console"
+#define TAG                     "vent_console"
 
 #define CONSOLE_MAX_CMDLINE_LEN 128
 #define CONSOLE_MAX_HISTORY_LEN 16
@@ -43,7 +43,7 @@ esp_err_t vent_console_start(UBaseType_t priority) {
 
   esp_err_t err = esp_console_new_repl_usb_serial_jtag(&hw_config, &repl_config, &repl);
   if (err != ESP_OK) {
-    LOGE(VENT_CONSOLE_TAG, "console init failed: %s", esp_err_to_name(err));
+    LOGE(TAG, "console init failed: %s", esp_err_to_name(err));
     return err;
   }
 
@@ -59,7 +59,7 @@ esp_err_t vent_console_start(UBaseType_t priority) {
   err = register_command("press", "Press a single button", "<fanup|fandown|tempup|tempdown|filter|filterlong>", cmd_press);
   if (err != ESP_OK) return err;
 
-  LOGN(VENT_CONSOLE_TAG, "console ready, type 'help' for commands");
+  LOGN(TAG, "console ready, type 'help' for commands");
   return esp_console_start_repl(repl);
 }
 
@@ -85,7 +85,6 @@ static int button_from_name(const char *name) {
   if (!strcasecmp(name, "fandown")) return BUTTON_FAN_DOWN;
   if (!strcasecmp(name, "tempup")) return BUTTON_TEMP_UP;
   if (!strcasecmp(name, "tempdown")) return BUTTON_TEMP_DOWN;
-  if (!strcasecmp(name, "filter")) return BUTTON_FILTER;
   if (!strcasecmp(name, "filterlong")) return BUTTON_FILTER_LONG;
   return -1;
 }
