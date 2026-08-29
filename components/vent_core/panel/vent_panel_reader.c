@@ -1,13 +1,13 @@
 #include "vent_panel_reader.h"
 
 #include "../drivers/vent_uart_driver.h"
-#include "../utilities/log_utils.h"
 
+#include <esp_log.h>
 #include <esp_timer.h>
 #include <freertos/semphr.h>
 #include <string.h>
 
-#define VENT_PANEL_TAG          "vent_panel_reader"
+static const char *const VENT_PANEL_TAG = "vent_panel_reader";
 
 #define PANEL_CHUNK_MAX_LEN     32
 #define PANEL_ONLINE_TIMEOUT_US (3000 * 1000)
@@ -80,13 +80,13 @@ static void vent_panel_reader_task(void *arg) {
   uint8_t chunk[PANEL_CHUNK_MAX_LEN];
   uart_event_t event;
 
-  LOGN(VENT_PANEL_TAG, "panel reader task started");
+  ESP_LOGI(VENT_PANEL_TAG, "panel reader task started");
 
   for (;;) {
     if (xQueueReceive(uart_event_queue, &event, portMAX_DELAY) != pdTRUE) continue;
 
     if (event.type == UART_FIFO_OVF || event.type == UART_BUFFER_FULL) {
-      LOGW(VENT_PANEL_TAG, "uart overflow (type %d), flushing", (int)event.type);
+      ESP_LOGW(VENT_PANEL_TAG, "uart overflow (type %d), flushing", (int)event.type);
       uart_flush_input(cfg.uart_port);
       xQueueReset(uart_event_queue);
       continue;

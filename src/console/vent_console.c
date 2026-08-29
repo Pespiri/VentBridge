@@ -1,9 +1,9 @@
 #include "vent_console.h"
 
-#include "../drivers/vent_button_control.h"
-#include "../panel/vent_panel_reader.h"
-#include "../project_meta.h"
-#include "../utilities/log_utils.h"
+#include "drivers/vent_button_control.h"
+#include "panel/vent_panel_reader.h"
+#include "project_meta.h"
+#include "utilities/log_utils.h"
 
 #include <esp_console.h>
 #include <stdio.h>

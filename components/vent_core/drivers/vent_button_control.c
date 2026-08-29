@@ -1,12 +1,12 @@
 #include "vent_button_control.h"
 
 #include "../panel/vent_panel_reader.h"
-#include "../utilities/log_utils.h"
 #include "vent_gpio_driver.h"
 
+#include <esp_log.h>
 #include <freertos/queue.h>
 
-#define VENT_BTN_CTRL_TAG      "vent_button_control"
+static const char *const VENT_BTN_CTRL_TAG = "vent_button_control";
 
 #define BUTTON_PRESS_MS        120   // 120 milliseconds
 #define BUTTON_STEP_GAP_MS     300   // 300 milliseconds
@@ -122,7 +122,7 @@ static void press_pulse(vent_button_enum_t button, uint32_t hold_ms) {
   gpio_num_t pin = pin_for(button);
   if (pin == GPIO_NUM_NC) return;
 
-  LOGD(VENT_BTN_CTRL_TAG, "pulse button %d on GPIO %d for %lums", (int)button, (int)pin, (unsigned long)hold_ms);
+  ESP_LOGD(VENT_BTN_CTRL_TAG, "pulse button %d on GPIO %d for %lums", (int)button, (int)pin, (unsigned long)hold_ms);
   vent_gpio_set_state(pin, VENT_GPIO_HIGH);
   vTaskDelay(pdMS_TO_TICKS(hold_ms));
   vent_gpio_set_state(pin, VENT_GPIO_LOW);
@@ -141,7 +141,7 @@ static void press_filter_long(void) {
   }
 
   vent_gpio_set_state(pin, VENT_GPIO_LOW);
-  LOGD(VENT_BTN_CTRL_TAG, "filter long press released after %lums", (unsigned long)waited_ms);
+  ESP_LOGD(VENT_BTN_CTRL_TAG, "filter long press released after %lums", (unsigned long)waited_ms);
 }
 
 static void move_fan_to(vent_fan_level_enum_t target_level) {
