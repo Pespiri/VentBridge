@@ -5,6 +5,7 @@
 #include <esp_err.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <hal/gpio_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,8 +20,17 @@ typedef enum VENT_BUTTON_ENUM {
   BUTTON_FILTER_LONG, // held until the panel state changes, or a 10s timeout
 } vent_button_enum_t;
 
+/** @brief GPIOs wired to the panel's button contacts */
+typedef struct VENT_BUTTON_PINS {
+  gpio_num_t fan_up;
+  gpio_num_t fan_down;
+  gpio_num_t temp_up;
+  gpio_num_t temp_down;
+  gpio_num_t filter;
+} vent_button_pins_t;
+
 /** @brief Configure button GPIOs and the internal command queue */
-esp_err_t vent_button_control_init(void);
+esp_err_t vent_button_control_init(const vent_button_pins_t *pins);
 
 /** @brief Start task executing queued button commands */
 void vent_button_control_start_task(UBaseType_t priority);

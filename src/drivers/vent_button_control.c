@@ -1,7 +1,6 @@
 #include "vent_button_control.h"
 
 #include "../panel/vent_panel_reader.h"
-#include "../project_config.h"
 #include "../utilities/log_utils.h"
 #include "vent_gpio_driver.h"
 
@@ -29,6 +28,7 @@ typedef struct BUTTON_CMD {
 } button_cmd_t;
 
 static QueueHandle_t cmd_queue = NULL;
+static vent_button_pins_t button_pins;
 
 /** @brief Get the GPIO pin associated with a given button
  *
@@ -61,17 +61,20 @@ static void move_temp_to(vent_temp_level_enum_t target_level);
 /** @brief Task function for handling button control commands */
 static void vent_button_control_task(void *arg);
 
-esp_err_t vent_button_control_init(void) {
-  const gpio_num_t pins[] = {
-    FAN_SPEED_UP_PIN,
-    FAN_SPEED_DOWN_PIN,
-    TEMP_UP_PIN,
-    TEMP_DOWN_PIN,
-    FILTER_PIN};
-  for (uint8_t i = 0; i < sizeof(pins) / sizeof(pins[0]); i++) {
-    esp_err_t err = vent_gpio_init_digital_output_pin(pins[i]);
+esp_err_t vent_button_control_init(const vent_button_pins_t *pins) {
+  if (!pins) return ESP_ERR_INVALID_ARG;
+  button_pins = *pins;
+
+  const gpio_num_t pin_list[] = {
+    button_pins.fan_up,
+    button_pins.fan_down,
+    button_pins.temp_up,
+    button_pins.temp_down,
+    button_pins.filter};
+  for (uint8_t i = 0; i < sizeof(pin_list) / sizeof(pin_list[0]); i++) {
+    esp_err_t err = vent_gpio_init_digital_output_pin(pin_list[i]);
     if (err != ESP_OK) return err;
-    vent_gpio_set_state(pins[i], VENT_GPIO_LOW);
+    vent_gpio_set_state(pin_list[i], VENT_GPIO_LOW);
   }
 
   cmd_queue = xQueueCreate(4, sizeof(button_cmd_t));
@@ -100,16 +103,16 @@ esp_err_t vent_button_control_move_temp_to(vent_temp_level_enum_t target_level) 
 static gpio_num_t pin_for(vent_button_enum_t button) {
   switch (button) {
     // fan control buttons
-    case BUTTON_FAN_UP: return FAN_SPEED_UP_PIN;
-    case BUTTON_FAN_DOWN: return FAN_SPEED_DOWN_PIN;
+    case BUTTON_FAN_UP: return button_pins.fan_up;
+    case BUTTON_FAN_DOWN: return button_pins.fan_down;
 
     // temperature control buttons
-    case BUTTON_TEMP_UP: return TEMP_UP_PIN;
-    case BUTTON_TEMP_DOWN: return TEMP_DOWN_PIN;
+    case BUTTON_TEMP_UP: return button_pins.temp_up;
+    case BUTTON_TEMP_DOWN: return button_pins.temp_down;
 
     // filter control buttons
     case BUTTON_FILTER:
-    case BUTTON_FILTER_LONG: return FILTER_PIN;
+    case BUTTON_FILTER_LONG: return button_pins.filter;
 
     default: return GPIO_NUM_NC;
   }
