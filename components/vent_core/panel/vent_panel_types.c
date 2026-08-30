@@ -2,9 +2,9 @@
 
 const char *vent_panel_fan_level_name(vent_fan_level_enum_t level) {
   switch (level) {
-    case FAN_LEVEL_LOW: return "low";
+    case FAN_LEVEL_MIN: return "min";
     case FAN_LEVEL_NORM: return "norm";
-    case FAN_LEVEL_HIGH: return "high";
+    case FAN_LEVEL_MAX: return "max";
     case FAN_LEVEL_UNKNOWN:
     default: return "unknown";
   }

@@ -5,9 +5,9 @@
 
 typedef enum VENT_FAN_LEVEL_ENUM {
   FAN_LEVEL_UNKNOWN = 0,
-  FAN_LEVEL_LOW = 1,
+  FAN_LEVEL_MIN = 1,
   FAN_LEVEL_NORM = 2,
-  FAN_LEVEL_HIGH = 3,
+  FAN_LEVEL_MAX = 3,
 } vent_fan_level_enum_t;
 
 typedef enum VENT_TEMP_LEVEL_ENUM {

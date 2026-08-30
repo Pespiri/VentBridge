@@ -161,7 +161,7 @@ static void press_filter_long(void) {
 }
 
 static void move_fan_to(vent_fan_level_enum_t target_level) {
-  if (target_level < FAN_LEVEL_LOW || target_level > FAN_LEVEL_HIGH) return;
+  if (target_level < FAN_LEVEL_MIN || target_level > FAN_LEVEL_MAX) return;
   vent_fan_level_enum_t current = vent_panel_reader_get_state().fan_level;
   if (current == FAN_LEVEL_UNKNOWN || current == target_level) return;
 

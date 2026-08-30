@@ -10,7 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TAG                     "vent_console"
+static const char *TAG = "vent_console";
+
+#define CONSOLE_OK              0
+#define CONSOLE_ERROR           1
 
 #define CONSOLE_MAX_CMDLINE_LEN 128
 #define CONSOLE_MAX_HISTORY_LEN 16
@@ -52,7 +55,7 @@ esp_err_t vent_console_start(UBaseType_t priority) {
 
   err = register_command("state", "Show the last decoded panel state", NULL, cmd_state);
   if (err != ESP_OK) return err;
-  err = register_command("fan", "Move the fan to a target level", "<low|norm|high>", cmd_fan);
+  err = register_command("fan", "Move the fan to a target level", "<min|norm|max>", cmd_fan);
   if (err != ESP_OK) return err;
   err = register_command("temp", "Move the temperature to a target level", "<0-5>", cmd_temp);
   if (err != ESP_OK) return err;
@@ -74,9 +77,9 @@ static esp_err_t register_command(const char *command, const char *help, const c
 }
 
 static vent_fan_level_enum_t fan_level_from_name(const char *name) {
-  if (!strcasecmp(name, "low")) return FAN_LEVEL_LOW;
+  if (!strcasecmp(name, "min")) return FAN_LEVEL_MIN;
   if (!strcasecmp(name, "norm")) return FAN_LEVEL_NORM;
-  if (!strcasecmp(name, "high")) return FAN_LEVEL_HIGH;
+  if (!strcasecmp(name, "max")) return FAN_LEVEL_MAX;
   return FAN_LEVEL_UNKNOWN;
 }
 
@@ -92,10 +95,10 @@ static int button_from_name(const char *name) {
 static int report_queue_result(esp_err_t err) {
   if (err != ESP_OK) {
     printf("command queue full, try again\n");
-    return 1;
+    return CONSOLE_ERROR;
   }
   printf("queued\n");
-  return 0;
+  return CONSOLE_OK;
 }
 
 static int cmd_state(int argc, char **argv) {
@@ -110,19 +113,19 @@ static int cmd_state(int argc, char **argv) {
   printf("summer:  %s\n", state.summer_on ? "on" : "off");
   printf("filter:  %s\n", state.filter_on ? "on" : "off");
   printf("raw:     0x%04X (unknown bits 0x%04X)\n", state.raw_value, state.unknown_bits);
-  return 0;
+  return CONSOLE_OK;
 }
 
 static int cmd_fan(int argc, char **argv) {
   if (argc != 2) {
-    printf("usage: fan <low|norm|high>\n");
-    return 1;
+    printf("usage: fan <min|norm|max>\n");
+    return CONSOLE_ERROR;
   }
 
   vent_fan_level_enum_t level = fan_level_from_name(argv[1]);
   if (level == FAN_LEVEL_UNKNOWN) {
-    printf("unknown fan level '%s', expected low|norm|high\n", argv[1]);
-    return 1;
+    printf("unknown fan level '%s', expected min|norm|max\n", argv[1]);
+    return CONSOLE_ERROR;
   }
 
   return report_queue_result(vent_button_control_move_fan_to(level));
@@ -131,14 +134,14 @@ static int cmd_fan(int argc, char **argv) {
 static int cmd_temp(int argc, char **argv) {
   if (argc != 2) {
     printf("usage: temp <0-5>\n");
-    return 1;
+    return CONSOLE_ERROR;
   }
 
   char *end = NULL;
   long level = strtol(argv[1], &end, 10);
   if (end == argv[1] || *end != '\0' || level < TEMP_LEVEL_NONE || level > TEMP_LEVEL_HIGH) {
     printf("temperature level must be an integer 0-5\n");
-    return 1;
+    return CONSOLE_ERROR;
   }
 
   return report_queue_result(vent_button_control_move_temp_to((vent_temp_level_enum_t)level));
@@ -147,13 +150,13 @@ static int cmd_temp(int argc, char **argv) {
 static int cmd_press(int argc, char **argv) {
   if (argc != 2) {
     printf("usage: press <fanup|fandown|tempup|tempdown|filter|filterlong>\n");
-    return 1;
+    return CONSOLE_ERROR;
   }
 
   int button = button_from_name(argv[1]);
   if (button < 0) {
     printf("unknown button '%s'\n", argv[1]);
-    return 1;
+    return CONSOLE_ERROR;
   }
 
   return report_queue_result(vent_button_control_press((vent_button_enum_t)button));

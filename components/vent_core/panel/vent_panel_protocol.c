@@ -46,8 +46,8 @@ static vent_temp_level_enum_t decode_temp_level(uint16_t value) {
 }
 
 static vent_fan_level_enum_t decode_fan_level(uint16_t value) {
-  if (value & (1 << 6)) return FAN_LEVEL_LOW;
+  if (value & (1 << 6)) return FAN_LEVEL_MIN;
   if (value & (1 << 7)) return FAN_LEVEL_NORM;
-  if (value & (1 << 8)) return FAN_LEVEL_HIGH;
+  if (value & (1 << 8)) return FAN_LEVEL_MAX;
   return FAN_LEVEL_UNKNOWN;
 }
