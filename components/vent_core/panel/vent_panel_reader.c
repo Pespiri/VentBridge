@@ -1,16 +1,17 @@
 #include "vent_panel_reader.h"
 
 #include "../drivers/vent_uart_driver.h"
-#include "../utilities/log_utils.h"
 
+#include <esp_log.h>
 #include <esp_timer.h>
 #include <freertos/semphr.h>
 #include <string.h>
 
-#define VENT_PANEL_TAG          "vent_panel_reader"
+static const char *const TAG = "vent_panel_reader";
 
 #define PANEL_CHUNK_MAX_LEN     32
 #define PANEL_ONLINE_TIMEOUT_US (3000 * 1000)
+#define TRACE_REPEAT_INTERVAL   100
 
 static SemaphoreHandle_t state_mutex;
 static QueueHandle_t uart_event_queue = NULL;
@@ -19,6 +20,7 @@ static volatile int64_t last_frame_us = 0;
 static vent_panel_reader_config_t cfg;
 static vent_panel_state_cb_t state_cb = NULL;
 static void *state_cb_ctx = NULL;
+static volatile bool trace_enabled = false;
 
 /** @brief Publish a freshly decoded state and mark the bus as alive */
 static void apply_decoded_state(const vent_panel_state_t *decoded);
@@ -27,7 +29,7 @@ static void apply_decoded_state(const vent_panel_state_t *decoded);
 static void vent_panel_reader_task(void *arg);
 
 void vent_panel_reader_start_task(UBaseType_t priority) {
-  xTaskCreate(vent_panel_reader_task, "vent_panel_reader", 4096, NULL, priority, NULL);
+  xTaskCreate(vent_panel_reader_task, TAG, 4096, NULL, priority, NULL);
 }
 
 vent_panel_state_t vent_panel_reader_get_state(void) {
@@ -40,6 +42,14 @@ vent_panel_state_t vent_panel_reader_get_state(void) {
 
 bool vent_panel_reader_is_online(void) {
   return (esp_timer_get_time() - last_frame_us) < PANEL_ONLINE_TIMEOUT_US;
+}
+
+void vent_panel_reader_set_trace(bool enabled) {
+  trace_enabled = enabled;
+}
+
+bool vent_panel_reader_get_trace(void) {
+  return trace_enabled;
 }
 
 esp_err_t vent_panel_reader_init(const vent_panel_reader_config_t *config) {
@@ -80,13 +90,18 @@ static void vent_panel_reader_task(void *arg) {
   uint8_t chunk[PANEL_CHUNK_MAX_LEN];
   uart_event_t event;
 
-  LOGN(VENT_PANEL_TAG, "panel reader task started");
+  uint8_t trace_prev[PANEL_CHUNK_MAX_LEN];
+  int trace_prev_len = 0;
+  uint32_t trace_repeats = 0;
+  bool trace_was_on = false;
+
+  ESP_LOGI(TAG, "panel reader task started");
 
   for (;;) {
     if (xQueueReceive(uart_event_queue, &event, portMAX_DELAY) != pdTRUE) continue;
 
     if (event.type == UART_FIFO_OVF || event.type == UART_BUFFER_FULL) {
-      LOGW(VENT_PANEL_TAG, "uart overflow (type %d), flushing", (int)event.type);
+      ESP_LOGW(TAG, "uart overflow (type %d), flushing", (int)event.type);
       uart_flush_input(cfg.uart_port);
       xQueueReset(uart_event_queue);
       continue;
@@ -101,8 +116,31 @@ static void vent_panel_reader_task(void *arg) {
     if (event.size > sizeof(chunk)) uart_flush_input(cfg.uart_port);
 
     vent_panel_state_t decoded;
-    if (byte_count == VENT_PANEL_STATUS_FRAME_LEN && vent_panel_protocol_decode_status(chunk, (size_t)byte_count, &decoded)) {
-      apply_decoded_state(&decoded);
+    bool decoded_ok = byte_count == VENT_PANEL_STATUS_FRAME_LEN &&
+                      vent_panel_protocol_decode_status(chunk, (size_t)byte_count, &decoded);
+    if (decoded_ok) apply_decoded_state(&decoded);
+
+    bool trace_on = trace_enabled;
+    if (trace_on != trace_was_on) {
+      trace_prev_len = 0;
+      trace_repeats = 0;
+      trace_was_on = trace_on;
+    }
+
+    if (trace_on) {
+      bool same = byte_count == trace_prev_len && memcmp(chunk, trace_prev, (size_t)byte_count) == 0;
+      if (same) {
+        trace_repeats++;
+        if (trace_repeats % TRACE_REPEAT_INTERVAL == 0)
+          ESP_LOGI(TAG, "(same frame seen %lu times so far)", (unsigned long)trace_repeats);
+      } else {
+        if (trace_repeats > 1) ESP_LOGI(TAG, "(last frame seen %lu times)", (unsigned long)trace_repeats);
+        ESP_LOGI(TAG, "rx %d byte%s%s", byte_count, byte_count == 1 ? "" : "s", decoded_ok ? "" : " (undecoded)");
+        ESP_LOG_BUFFER_HEX_LEVEL(TAG, chunk, (uint16_t)byte_count, ESP_LOG_INFO);
+        memcpy(trace_prev, chunk, (size_t)byte_count);
+        trace_prev_len = byte_count;
+        trace_repeats = 1;
+      }
     }
   }
 }
