@@ -5,7 +5,7 @@ unit, by tapping the wired control panel's bus with an ESP32.
 
 The unit has no network interface — the only thing it talks to is its wall panel. VentBridge
 listens on that bus, decodes the panel protocol, and exposes fan speed, heat recovery,
-filter status and summer mode as native Home Assistant entities over WiFi.
+notification state and summer mode as native Home Assistant entities over WiFi.
 
 ---
 
@@ -98,11 +98,13 @@ pio run && pio run -t upload && pio device monitor
 | Heat recovery | `select` | `none` / `low` / `low-med` / `med` / `med-high` / `high` |
 | Fan up / down | `button` | single step |
 | Temperature up / down | `button` | single step |
-| Filter reset | `button` | long press; clears the filter light |
+| Filter reset | `button` | long press |
 | Summer mode | `binary_sensor` | read-only |
-| Filter alarm | `binary_sensor` | `problem` |
+| Panel notification | `binary_sensor` | notification LED; blinks after a filter reset |
+| Filter reset detected | `binary_sensor` | `diagnostic`; pulses when a reset is seen on the bus |
 | Panel online | `binary_sensor` | `connectivity` |
-| Frame trace | `switch` | optional; commented out in the YAML |
+| Filter days remaining | `sensor` | days until the panel's 365-day warning |
+| Frame trace | `switch` | hex-dump bus frames (optional; commented out in the YAML) |
 
 Level changes are performed as repeated single-step presses, so the panel reports every
 intermediate level. The driver reports the *target* while a move is in flight and only
@@ -136,6 +138,17 @@ FF 01 <lo> <hi> FF <crc> 00          7 bytes
 `lo | hi<<8` is a 16-bit state bitmap. `crc` is **CRC-8/MAXIM** (poly `0x8C`, init `0x00`)
 over bytes `[0..4]`. Unrecognised bits are surfaced as `unknown_bits` in `state`, which is
 how the remaining fields get mapped.
+
+| Bit | Meaning |
+| --- | --- |
+| 1 / 2 / 3 | heat recovery low / medium / high (combined for the six levels) |
+| 4 | summer mode |
+| 5 | panel notification LED |
+| 6 / 7 / 8 | fan min / norm / max |
+| 0, 9-15 | unmapped; never observed set |
+
+Bit 5 is the **notification** LED, not a filter indicator — it is what blinks during the
+post-reset animation. No filter-alarm bit has been observed on this unit.
 
 ### Button frame — panel to bus
 

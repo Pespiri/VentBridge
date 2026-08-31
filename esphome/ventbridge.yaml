@@ -66,9 +66,24 @@ binary_sensor:
     type: summer
     name: "Summer mode"
   - platform: vent_bridge
-    type: filter
-    name: "Filter alarm"
-    device_class: problem
+    type: notification
+    name: "Panel notification"
+    # Blinks at ~5Hz during the post-filter-reset animation; ride over it so the
+    # entity reads steadily rather than flapping across the API.
+    filters:
+      - delayed_off: 5s
+  - platform: vent_bridge
+    type: filter_reset
+    name: "Filter reset detected"
+    entity_category: diagnostic
+    # The panel keeps its own 365-day timer but never puts it on the bus, so the
+    # reset date is recorded here. This fires on the button frame the panel itself
+    # emits, so it covers presses made at the wall panel as well as via HA - and
+    # unlike watching the alarm clear, it works even if the alarm was never lit.
+    on_press:
+      - lambda: |-
+          auto now = id(ha_time).now();
+          if (now.is_valid()) id(filter_reset_epoch) = now.timestamp;
   - platform: vent_bridge
     type: online
     name: "Panel online"
@@ -77,6 +92,33 @@ binary_sensor:
 # switch:
 #   - platform: vent_bridge
 #     name: "Frame trace"
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+globals:
+  # Unix time of the last filter reset; survives reboots. 0 means never seen one.
+  - id: filter_reset_epoch
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+
+sensor:
+  - platform: template
+    name: "Filter days remaining"
+    unit_of_measurement: d
+    device_class: duration
+    state_class: measurement
+    icon: mdi:air-filter
+    accuracy_decimals: 0
+    update_interval: 1h
+    lambda: |-
+      if (id(filter_reset_epoch) == 0) return {};
+      auto now = id(ha_time).now();
+      if (!now.is_valid()) return {};
+      int32_t elapsed = (int32_t)(now.timestamp - id(filter_reset_epoch));
+      return 365.0f - (elapsed / 86400.0f);
 
 wifi:
   ssid: !secret wifi_ssid

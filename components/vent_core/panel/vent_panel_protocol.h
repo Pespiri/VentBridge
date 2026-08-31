@@ -10,6 +10,17 @@
 // (CRC-8/MAXIM over bytes [0..4]). b2|b3<<8 forms a 16-bit state bitmap
 #define VENT_PANEL_STATUS_FRAME_LEN 7
 
+// Panel button frame: 00 b1 b2 FF crc 00 (CRC-8/MAXIM over bytes [0..3]).
+// The panel answers in the slot right after a status frame, so the two arrive
+// back-to-back and the UART hands them over as one burst.
+#define VENT_PANEL_BUTTON_FRAME_LEN 6
+
+#define VENT_PANEL_BTN_TEMP_DOWN    0x0002
+#define VENT_PANEL_BTN_TEMP_UP      0x0004
+#define VENT_PANEL_BTN_FAN_DOWN     0x0008
+#define VENT_PANEL_BTN_FAN_UP       0x0010
+#define VENT_PANEL_BTN_FILTER_RESET 0x0200
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +35,13 @@ uint8_t vent_panel_protocol_crc8(const uint8_t *data, size_t len);
  *         (in which case `out_state` is left unmodified)
  */
 bool vent_panel_protocol_decode_status(const uint8_t *frame, size_t len, vent_panel_state_t *out_state);
+
+/**
+ * @brief Decode a panel button frame into a VENT_PANEL_BTN_* bitmask
+ *
+ * @return true if `frame` has a valid header and checksum; false otherwise
+ */
+bool vent_panel_protocol_decode_button(const uint8_t *frame, size_t len, uint16_t *out_buttons);
 
 #ifdef __cplusplus
 }

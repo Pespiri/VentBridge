@@ -35,6 +35,11 @@ namespace esphome {
         this->state_callback_.add(std::move(callback));
       }
 
+      /* Fires when the panel's own filter-reset button is seen on the bus. */
+      void add_on_filter_reset_callback(std::function<void()> &&callback) {
+        this->filter_reset_callback_.add(std::move(callback));
+      }
+
       vent_panel_state_t get_state() const { return vent_panel_reader_get_state(); }
       bool is_online() const { return vent_panel_reader_is_online(); }
 
@@ -51,10 +56,12 @@ namespace esphome {
       vent_panel_reader_config_t reader_config_{};
       vent_button_pins_t button_pins_{};
       CallbackManager<void(const vent_panel_state_t &)> state_callback_;
+      CallbackManager<void()> filter_reset_callback_;
       std::atomic<bool> dirty_{false};
       bool last_online_{false};
       bool first_publish_{true};
       bool last_move_pending_{false};
+      uint32_t last_filter_reset_count_{0};
     };
   } // namespace vent_bridge
 } // namespace esphome

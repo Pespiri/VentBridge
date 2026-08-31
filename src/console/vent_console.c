@@ -113,7 +113,7 @@ static int cmd_state(int argc, char **argv) {
   printf("fan:     %s (%d)\n", vent_panel_fan_level_name(state.fan_level), (int)state.fan_level);
   printf("temp:    %s (%d)\n", vent_panel_temp_level_name(state.temp_level), (int)state.temp_level);
   printf("summer:  %s\n", state.summer_on ? "on" : "off");
-  printf("filter:  %s\n", state.filter_on ? "on" : "off");
+  printf("notify:  %s\n", state.notification_on ? "on" : "off");
   printf("raw:     0x%04X (unknown bits 0x%04X)\n", state.raw_value, state.unknown_bits);
   return CONSOLE_OK;
 }

@@ -21,6 +21,7 @@ static vent_panel_reader_config_t cfg;
 static vent_panel_state_cb_t state_cb = NULL;
 static void *state_cb_ctx = NULL;
 static volatile bool trace_enabled = false;
+static volatile uint32_t filter_reset_count = 0;
 
 /** @brief Publish a freshly decoded state and mark the bus as alive */
 static void apply_decoded_state(const vent_panel_state_t *decoded);
@@ -50,6 +51,10 @@ void vent_panel_reader_set_trace(bool enabled) {
 
 bool vent_panel_reader_get_trace(void) {
   return trace_enabled;
+}
+
+uint32_t vent_panel_reader_filter_reset_count(void) {
+  return filter_reset_count;
 }
 
 esp_err_t vent_panel_reader_init(const vent_panel_reader_config_t *config) {
@@ -116,9 +121,15 @@ static void vent_panel_reader_task(void *arg) {
     if (event.size > sizeof(chunk)) uart_flush_input(cfg.uart_port);
 
     vent_panel_state_t decoded;
-    bool decoded_ok = byte_count == VENT_PANEL_STATUS_FRAME_LEN &&
-                      vent_panel_protocol_decode_status(chunk, (size_t)byte_count, &decoded);
+    bool decoded_ok = byte_count >= VENT_PANEL_STATUS_FRAME_LEN &&
+                      vent_panel_protocol_decode_status(chunk, VENT_PANEL_STATUS_FRAME_LEN, &decoded);
     if (decoded_ok) apply_decoded_state(&decoded);
+
+    uint16_t buttons = 0;
+    if (byte_count >= VENT_PANEL_STATUS_FRAME_LEN + VENT_PANEL_BUTTON_FRAME_LEN && vent_panel_protocol_decode_button(chunk + VENT_PANEL_STATUS_FRAME_LEN, (size_t)(byte_count - VENT_PANEL_STATUS_FRAME_LEN), &buttons)) {
+      if (buttons & VENT_PANEL_BTN_FILTER_RESET) filter_reset_count++;
+      ESP_LOGD(TAG, "panel button 0x%04x", (unsigned)buttons);
+    }
 
     bool trace_on = trace_enabled;
     if (trace_on != trace_was_on) {

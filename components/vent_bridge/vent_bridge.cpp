@@ -42,6 +42,12 @@ namespace esphome {
       bool online_changed = online != this->last_online_;
       this->last_online_ = online;
 
+      uint32_t resets = vent_panel_reader_filter_reset_count();
+      if (resets != this->last_filter_reset_count_) {
+        this->last_filter_reset_count_ = resets;
+        this->filter_reset_callback_.call();
+      }
+
       // Publish once at startup so entities report offline instead of staying unknown
       // when the panel never responds.
       bool initial = this->first_publish_;

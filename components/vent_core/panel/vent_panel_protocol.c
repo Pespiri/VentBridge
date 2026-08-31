@@ -1,7 +1,8 @@
 #include "vent_panel_protocol.h"
 
-#define SUMMER_ON_BIT 1 << 4 // 0b00010000
-#define FILTER_ON_BIT 1 << 5 // 0b00100000
+// #define FILTER_ON_BIT       1 << ? // not observed (yet)
+#define SUMMER_ON_BIT       1 << 4 // 0b00010000
+#define NOTIFICATION_ON_BIT 1 << 5 // 0b00100000
 
 /** @brief Map the temperature bits of the state bitmap to a temperature level */
 static vent_temp_level_enum_t decode_temp_level(uint16_t value);
@@ -28,9 +29,18 @@ bool vent_panel_protocol_decode_status(const uint8_t *frame, size_t len, vent_pa
   out_state->fan_level = decode_fan_level(value);
   out_state->temp_level = decode_temp_level(value);
   out_state->summer_on = value & SUMMER_ON_BIT;
-  out_state->filter_on = value & FILTER_ON_BIT;
+  out_state->notification_on = value & NOTIFICATION_ON_BIT;
   out_state->raw_value = value;
   out_state->unknown_bits = value & (uint16_t)~0x01FE;
+  return true;
+}
+
+bool vent_panel_protocol_decode_button(const uint8_t *frame, size_t len, uint16_t *out_buttons) {
+  if (len < VENT_PANEL_BUTTON_FRAME_LEN) return false;
+  if (frame[0] != 0x00 || frame[3] != 0xFF) return false;
+  if (vent_panel_protocol_crc8(frame, 4) != frame[4]) return false;
+
+  *out_buttons = (uint16_t)frame[1] | ((uint16_t)frame[2] << 8);
   return true;
 }
 
