@@ -51,6 +51,15 @@ vent_panel_state_t vent_panel_reader_get_state(void);
 /** @brief True if a valid status frame has been seen recently (bus is alive) */
 bool vent_panel_reader_is_online(void);
 
+/**
+ * @brief Hex-dump every received chunk to the log, decodable or not
+ *
+ * Off by default. Undecodable chunks are only visible with this on, so it is the
+ * way to see traffic the protocol decoder does not yet understand.
+ */
+void vent_panel_reader_set_trace(bool enabled);
+bool vent_panel_reader_get_trace(void);
+
 #ifdef __cplusplus
 }
 #endif

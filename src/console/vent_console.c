@@ -29,6 +29,7 @@ static int cmd_state(int argc, char **argv);
 static int cmd_fan(int argc, char **argv);
 static int cmd_temp(int argc, char **argv);
 static int cmd_press(int argc, char **argv);
+static int cmd_trace(int argc, char **argv);
 
 /** @brief Register a single command with the console */
 static esp_err_t register_command(const char *command, const char *help, const char *hint, esp_console_cmd_func_t func);
@@ -59,9 +60,10 @@ esp_err_t vent_console_start(UBaseType_t priority) {
   if (err != ESP_OK) return err;
   err = register_command("temp", "Move the temperature to a target level", "<0-5>", cmd_temp);
   if (err != ESP_OK) return err;
-  err = register_command("press", "Press a single button", "<fanup|fandown|tempup|tempdown|filter|filterlong>", cmd_press);
+  err = register_command("press", "Press a single button", "<fanup|fandown|tempup|tempdown|filterlong>", cmd_press);
   if (err != ESP_OK) return err;
-
+  err = register_command("trace", "Hex-dump received panel frames", "[on|off]", cmd_trace);
+  if (err != ESP_OK) return err;
   LOGN(TAG, "console ready, type 'help' for commands");
   return esp_console_start_repl(repl);
 }
@@ -149,7 +151,7 @@ static int cmd_temp(int argc, char **argv) {
 
 static int cmd_press(int argc, char **argv) {
   if (argc != 2) {
-    printf("usage: press <fanup|fandown|tempup|tempdown|filter|filterlong>\n");
+    printf("usage: press <fanup|fandown|tempup|tempdown|filterlong>\n");
     return CONSOLE_ERROR;
   }
 
@@ -160,4 +162,23 @@ static int cmd_press(int argc, char **argv) {
   }
 
   return report_queue_result(vent_button_control_press((vent_button_enum_t)button));
+}
+
+static int cmd_trace(int argc, char **argv) {
+  if (argc == 2) {
+    if (!strcasecmp(argv[1], "on")) {
+      vent_panel_reader_set_trace(true);
+    } else if (!strcasecmp(argv[1], "off")) {
+      vent_panel_reader_set_trace(false);
+    } else {
+      printf("usage: trace [on|off]\n");
+      return CONSOLE_ERROR;
+    }
+  } else if (argc != 1) {
+    printf("usage: trace [on|off]\n");
+    return CONSOLE_ERROR;
+  }
+
+  printf("trace: %s\n", vent_panel_reader_get_trace() ? "on" : "off");
+  return CONSOLE_OK;
 }
