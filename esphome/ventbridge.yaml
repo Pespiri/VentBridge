@@ -1,0 +1,98 @@
+substitutions:
+  name: ventbridge
+  # Swap to esp32-c6-devkitc-1 (or your C6 board) when the hardware arrives.
+  board: seeed_xiao_esp32s3
+  # Overridden per build with `-s version <git tag>`; see scripts/esphome_targets.py.
+  version: dev
+
+esphome:
+  name: ${name}
+  project:
+    name: pespiri.ventbridge
+    version: ${version}
+
+# The driver core is a plain ESP-IDF component, so the esp-idf framework is required.
+# vent_bridge registers it, and its logging sdkconfig options, automatically.
+esp32:
+  board: ${board}
+  framework:
+    type: esp-idf
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+    components: [vent_bridge]
+
+vent_bridge:
+  id: vent
+  uart_port: 1
+  rx_pin: GPIO8
+  tx_pin: GPIO9
+  baud_rate: 4800
+  fan_up_pin: GPIO2
+  fan_down_pin: GPIO3
+  temp_up_pin: GPIO4
+  temp_down_pin: GPIO5
+  filter_pin: GPIO6
+
+select:
+  - platform: vent_bridge
+    type: fan
+    name: "Fan speed"
+  - platform: vent_bridge
+    type: temperature
+    name: "Heat recovery"
+
+button:
+  - platform: vent_bridge
+    type: fan_up
+    name: "Fan up"
+  - platform: vent_bridge
+    type: fan_down
+    name: "Fan down"
+  - platform: vent_bridge
+    type: temp_up
+    name: "Temperature up"
+  - platform: vent_bridge
+    type: temp_down
+    name: "Temperature down"
+  - platform: vent_bridge
+    type: filter_long
+    name: "Filter reset"
+
+binary_sensor:
+  - platform: vent_bridge
+    type: summer
+    name: "Summer mode"
+  - platform: vent_bridge
+    type: filter
+    name: "Filter alarm"
+    device_class: problem
+  - platform: vent_bridge
+    type: online
+    name: "Panel online"
+    device_class: connectivity
+
+# switch:
+#   - platform: vent_bridge
+#     name: "Frame trace"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${name} fallback"
+
+captive_portal:
+
+api:
+  encryption:
+    key: !secret api_key
+
+logger:
+  level: DEBUG
+
+ota:
+  - platform: esphome
+    password: !secret ota_password

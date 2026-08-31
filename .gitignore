@@ -7,3 +7,7 @@
 build
 sdkconfig.*
 sdkconfig
+esphome/secrets.yaml
+esphome/.esphome/
+.venv-esphome/
+__pycache__/
