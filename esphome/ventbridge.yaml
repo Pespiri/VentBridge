@@ -30,32 +30,32 @@ vent_bridge:
   rx_pin: GPIO8
   tx_pin: GPIO9
   baud_rate: 4800
-  fan_up_pin: GPIO2
-  fan_down_pin: GPIO3
-  temp_up_pin: GPIO4
-  temp_down_pin: GPIO5
+  airflow_up_pin: GPIO2
+  airflow_down_pin: GPIO3
+  air_temp_up_pin: GPIO4
+  air_temp_down_pin: GPIO5
   filter_pin: GPIO6
 
 select:
   - platform: vent_bridge
-    type: fan
-    name: "Fan speed"
+    type: airflow
+    name: "Airflow"
   - platform: vent_bridge
-    type: temperature
-    name: "Heat recovery"
+    type: air_temp
+    name: "Temperature"
 
 button:
   - platform: vent_bridge
-    type: fan_up
-    name: "Fan up"
+    type: airflow_up
+    name: "Airflow up"
   - platform: vent_bridge
-    type: fan_down
-    name: "Fan down"
+    type: airflow_down
+    name: "Airflow down"
   - platform: vent_bridge
-    type: temp_up
+    type: air_temp_up
     name: "Temperature up"
   - platform: vent_bridge
-    type: temp_down
+    type: air_temp_down
     name: "Temperature down"
   - platform: vent_bridge
     type: filter_long
@@ -64,7 +64,8 @@ button:
 binary_sensor:
   - platform: vent_bridge
     type: summer
-    name: "Summer mode"
+    name: "Summer operation"
+    icon: mdi:weather-sunny
   - platform: vent_bridge
     type: notification
     name: "Panel notification"

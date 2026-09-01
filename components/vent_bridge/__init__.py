@@ -20,17 +20,17 @@ VentBridge = vent_bridge_ns.class_("VentBridge", cg.Component)
 
 CONF_VENT_BRIDGE_ID = "vent_bridge_id"
 CONF_UART_PORT = "uart_port"
-CONF_FAN_UP_PIN = "fan_up_pin"
-CONF_FAN_DOWN_PIN = "fan_down_pin"
-CONF_TEMP_UP_PIN = "temp_up_pin"
-CONF_TEMP_DOWN_PIN = "temp_down_pin"
+CONF_AIRFLOW_UP_PIN = "airflow_up_pin"
+CONF_AIRFLOW_DOWN_PIN = "airflow_down_pin"
+CONF_AIR_TEMP_UP_PIN = "air_temp_up_pin"
+CONF_AIR_TEMP_DOWN_PIN = "air_temp_down_pin"
 CONF_FILTER_PIN = "filter_pin"
 
 _BUTTON_PINS = (
-    CONF_FAN_UP_PIN,
-    CONF_FAN_DOWN_PIN,
-    CONF_TEMP_UP_PIN,
-    CONF_TEMP_DOWN_PIN,
+    CONF_AIRFLOW_UP_PIN,
+    CONF_AIRFLOW_DOWN_PIN,
+    CONF_AIR_TEMP_UP_PIN,
+    CONF_AIR_TEMP_DOWN_PIN,
     CONF_FILTER_PIN,
 )
 
@@ -69,8 +69,8 @@ async def to_code(config):
     cg.add(var.set_tx_pin(config[CONF_TX_PIN]))
     cg.add(var.set_baud_rate(config[CONF_BAUD_RATE]))
 
-    cg.add(var.set_fan_up_pin(config[CONF_FAN_UP_PIN]))
-    cg.add(var.set_fan_down_pin(config[CONF_FAN_DOWN_PIN]))
-    cg.add(var.set_temp_up_pin(config[CONF_TEMP_UP_PIN]))
-    cg.add(var.set_temp_down_pin(config[CONF_TEMP_DOWN_PIN]))
+    cg.add(var.set_airflow_up_pin(config[CONF_AIRFLOW_UP_PIN]))
+    cg.add(var.set_airflow_down_pin(config[CONF_AIRFLOW_DOWN_PIN]))
+    cg.add(var.set_air_temp_up_pin(config[CONF_AIR_TEMP_UP_PIN]))
+    cg.add(var.set_air_temp_down_pin(config[CONF_AIR_TEMP_DOWN_PIN]))
     cg.add(var.set_filter_pin(config[CONF_FILTER_PIN]))

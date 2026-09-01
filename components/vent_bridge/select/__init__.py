@@ -11,20 +11,20 @@ VentSelect = vent_bridge_ns.class_("VentSelect", select.Select, cg.Component)
 VentSelectType = vent_bridge_ns.enum("VentSelectType")
 
 TYPES = {
-    "fan": VentSelectType.VENT_SELECT_FAN,
-    "temperature": VentSelectType.VENT_SELECT_TEMP,
+    "airflow": VentSelectType.VENT_SELECT_AIRFLOW,
+    "air_temp": VentSelectType.VENT_SELECT_AIR_TEMP,
 }
 
 # Order must mirror the level enums; the C++ side maps option index to level,
-# offset by the first selectable level (FAN_LEVEL_MIN / TEMP_LEVEL_NONE).
+# offset by the first selectable level (AIRFLOW_LEVEL_MIN / AIR_TEMP_LEVEL_NONE).
 OPTIONS = {
-    "fan": ["min", "norm", "max"],
-    "temperature": ["none", "low", "low/med", "med", "med/high", "high"],
+    "airflow": ["min", "norm", "max"],
+    "air_temp": ["none", "low", "low/med", "med", "med/high", "high"],
 }
 
 ICONS = {
-    "fan": "mdi:fan",
-    "temperature": "mdi:thermometer",
+    "airflow": "mdi:fan",
+    "air_temp": "mdi:thermometer",
 }
 
 

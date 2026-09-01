@@ -3,10 +3,10 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 
-#define FAN_SPEED_UP_PIN              GPIO_NUM_2
-#define FAN_SPEED_DOWN_PIN            GPIO_NUM_3
-#define TEMP_UP_PIN                   GPIO_NUM_4
-#define TEMP_DOWN_PIN                 GPIO_NUM_5
+#define AIRFLOW_UP_PIN                GPIO_NUM_2
+#define AIRFLOW_DOWN_PIN              GPIO_NUM_3
+#define AIR_TEMP_UP_PIN               GPIO_NUM_4
+#define AIR_TEMP_DOWN_PIN             GPIO_NUM_5
 #define FILTER_PIN                    GPIO_NUM_6
 
 #define UART_RX_PIN                   GPIO_NUM_8
@@ -31,13 +31,13 @@
     .read_timeout_ms = PANEL_UART_READ_TIMEOUT_MS,       \
   }
 
-#define VENT_BUTTON_PINS_DEFAULT    \
-  {                                 \
-    .fan_up = FAN_SPEED_UP_PIN,     \
-    .fan_down = FAN_SPEED_DOWN_PIN, \
-    .temp_up = TEMP_UP_PIN,         \
-    .temp_down = TEMP_DOWN_PIN,     \
-    .filter = FILTER_PIN,           \
+#define VENT_BUTTON_PINS_DEFAULT        \
+  {                                     \
+    .airflow_up = AIRFLOW_UP_PIN,       \
+    .airflow_down = AIRFLOW_DOWN_PIN,   \
+    .air_temp_up = AIR_TEMP_UP_PIN,     \
+    .air_temp_down = AIR_TEMP_DOWN_PIN, \
+    .filter = FILTER_PIN,               \
   }
 
 /** Task priorities */

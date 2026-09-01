@@ -3,26 +3,26 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum VENT_FAN_LEVEL_ENUM {
-  FAN_LEVEL_UNKNOWN = 0,
-  FAN_LEVEL_MIN = 1,
-  FAN_LEVEL_NORM = 2,
-  FAN_LEVEL_MAX = 3,
-} vent_fan_level_enum_t;
+typedef enum VENT_AIRFLOW_LEVEL_ENUM {
+  AIRFLOW_LEVEL_UNKNOWN = 0,
+  AIRFLOW_LEVEL_MIN = 1,
+  AIRFLOW_LEVEL_NORM = 2,
+  AIRFLOW_LEVEL_MAX = 3,
+} vent_airflow_level_enum_t;
 
-typedef enum VENT_TEMP_LEVEL_ENUM {
-  TEMP_LEVEL_UNKNOWN = -1,
-  TEMP_LEVEL_NONE = 0,
-  TEMP_LEVEL_LOW = 1,
-  TEMP_LEVEL_LOW_MED = 2,
-  TEMP_LEVEL_MED = 3,
-  TEMP_LEVEL_MED_HIGH = 4,
-  TEMP_LEVEL_HIGH = 5,
-} vent_temp_level_enum_t;
+typedef enum VENT_AIR_TEMP_LEVEL_ENUM {
+  AIR_TEMP_LEVEL_UNKNOWN = -1,
+  AIR_TEMP_LEVEL_NONE = 0,
+  AIR_TEMP_LEVEL_LOW = 1,
+  AIR_TEMP_LEVEL_LOW_MED = 2,
+  AIR_TEMP_LEVEL_MED = 3,
+  AIR_TEMP_LEVEL_MED_HIGH = 4,
+  AIR_TEMP_LEVEL_HIGH = 5,
+} vent_air_temp_level_enum_t;
 
 typedef struct VENT_PANEL_STATE {
-  vent_fan_level_enum_t fan_level;
-  vent_temp_level_enum_t temp_level;
+  vent_airflow_level_enum_t airflow_level;
+  vent_air_temp_level_enum_t air_temp_level;
   bool summer_on;
   bool notification_on;
   uint16_t raw_value;
@@ -33,11 +33,11 @@ typedef struct VENT_PANEL_STATE {
 extern "C" {
 #endif
 
-/** @brief Readable name for a fan level */
-const char *vent_panel_fan_level_name(vent_fan_level_enum_t level);
+/** @brief Readable name for an airflow level */
+const char *vent_panel_airflow_level_name(vent_airflow_level_enum_t level);
 
-/** @brief Readable name for a temperature level */
-const char *vent_panel_temp_level_name(vent_temp_level_enum_t level);
+/** @brief Readable name for an air temperature level */
+const char *vent_panel_air_temp_level_name(vent_air_temp_level_enum_t level);
 
 #ifdef __cplusplus
 }

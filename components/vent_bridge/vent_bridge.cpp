@@ -56,8 +56,8 @@ namespace esphome {
       // Publishing on both edges shows the target as soon as a move is queued, and
       // re-publishes the real level once it finishes, so a move that fell short
       // still converges to the truth.
-      bool move_pending = vent_button_control_pending_fan() != FAN_LEVEL_UNKNOWN ||
-                          vent_button_control_pending_temp() != TEMP_LEVEL_UNKNOWN;
+      bool move_pending = vent_button_control_pending_airflow() != AIRFLOW_LEVEL_UNKNOWN ||
+                          vent_button_control_pending_air_temp() != AIR_TEMP_LEVEL_UNKNOWN;
       bool move_changed = move_pending != this->last_move_pending_;
       this->last_move_pending_ = move_pending;
 
@@ -72,7 +72,7 @@ namespace esphome {
     void VentBridge::dump_config() {
       ESP_LOGCONFIG(TAG, "Vent Bridge:");
       ESP_LOGCONFIG(TAG, "  UART%d  RX:%d TX:%d @ %" PRIu32 " baud", (int)this->reader_config_.uart_port, (int)this->reader_config_.rx_pin, (int)this->reader_config_.tx_pin, this->reader_config_.baud_rate);
-      ESP_LOGCONFIG(TAG, "  Buttons  fan:%d/%d temp:%d/%d filter:%d", (int)this->button_pins_.fan_up, (int)this->button_pins_.fan_down, (int)this->button_pins_.temp_up, (int)this->button_pins_.temp_down, (int)this->button_pins_.filter);
+      ESP_LOGCONFIG(TAG, "  Buttons  fan:%d/%d temp:%d/%d filter:%d", (int)this->button_pins_.airflow_up, (int)this->button_pins_.airflow_down, (int)this->button_pins_.air_temp_up, (int)this->button_pins_.air_temp_down, (int)this->button_pins_.filter);
       if (this->is_failed()) {
         ESP_LOGE(TAG, "  Setup failed");
       }

@@ -4,8 +4,8 @@ Home Assistant control for a **Systemair Villavent VR400E** heat-recovery ventil
 unit, by tapping the wired control panel's bus with an ESP32.
 
 The unit has no network interface — the only thing it talks to is its wall panel. VentBridge
-listens on that bus, decodes the panel protocol, and exposes fan speed, heat recovery,
-notification state and summer mode as native Home Assistant entities over WiFi.
+listens on that bus, decodes the panel protocol, and exposes airflow, temperature,
+notification state and summer operation as native Home Assistant entities over WiFi.
 
 ---
 
@@ -94,12 +94,12 @@ pio run && pio run -t upload && pio device monitor
 
 | Entity | Type | Notes |
 | --- | --- | --- |
-| Fan speed | `select` | `min` / `norm` / `max` |
-| Heat recovery | `select` | `none` / `low` / `low-med` / `med` / `med-high` / `high` |
-| Fan up / down | `button` | single step |
+| Airflow | `select` | `min` / `norm` / `max` |
+| Temperature | `select` | `none` / `low` / `low-med` / `med` / `med-high` / `high` |
+| Airflow up / down | `button` | single step |
 | Temperature up / down | `button` | single step |
 | Filter reset | `button` | long press |
-| Summer mode | `binary_sensor` | read-only |
+| Summer operation | `binary_sensor` | read-only |
 | Panel notification | `binary_sensor` | notification LED; blinks after a filter reset |
 | Filter reset detected | `binary_sensor` | `diagnostic`; pulses when a reset is seen on the bus |
 | Panel online | `binary_sensor` | `connectivity` |
@@ -122,7 +122,7 @@ USB serial, ESP-IDF build only.
 | `state` | Decoded panel state plus the raw bitmap |
 | `fan <min\|norm\|max>` | Move fan to a level |
 | `temp <0-5>` | Move heat recovery to a level |
-| `press <fanup\|fandown\|tempup\|tempdown\|filterlong>` | Single button press |
+| `press <airup\|airdown\|tempup\|tempdown\|filterlong>` | Single button press |
 | `trace [on\|off]` | Hex-dump bus frames |
 
 ---
@@ -142,7 +142,7 @@ how the remaining fields get mapped.
 | Bit | Meaning |
 | --- | --- |
 | 1 / 2 / 3 | heat recovery low / medium / high (combined for the six levels) |
-| 4 | summer mode |
+| 4 | summer operation |
 | 5 | panel notification LED |
 | 6 / 7 / 8 | fan min / norm / max |
 | 0, 9-15 | unmapped; never observed set |

@@ -12,10 +12,10 @@ extern "C" {
 #endif
 
 typedef enum VENT_BUTTON_ENUM {
-  BUTTON_FAN_UP,
-  BUTTON_FAN_DOWN,
-  BUTTON_TEMP_UP,
-  BUTTON_TEMP_DOWN,
+  BUTTON_AIRFLOW_UP,
+  BUTTON_AIRFLOW_DOWN,
+  BUTTON_AIR_TEMP_UP,
+  BUTTON_AIR_TEMP_DOWN,
   // The panel ignores a short filter press by design; only the long press acts,
   // clearing the filter replacement light. Held until the panel state changes,
   // or a 10s timeout.
@@ -24,10 +24,10 @@ typedef enum VENT_BUTTON_ENUM {
 
 /** @brief GPIOs wired to the panel's button contacts */
 typedef struct VENT_BUTTON_PINS {
-  gpio_num_t fan_up;
-  gpio_num_t fan_down;
-  gpio_num_t temp_up;
-  gpio_num_t temp_down;
+  gpio_num_t airflow_up;
+  gpio_num_t airflow_down;
+  gpio_num_t air_temp_up;
+  gpio_num_t air_temp_down;
   gpio_num_t filter;
 } vent_button_pins_t;
 
@@ -40,11 +40,11 @@ void vent_button_control_start_task(UBaseType_t priority);
 /** @brief Queue a single button press (non-blocking) */
 esp_err_t vent_button_control_press(vent_button_enum_t button);
 
-/** @brief Queue fan to move to target */
-esp_err_t vent_button_control_move_fan_to(vent_fan_level_enum_t target_level);
+/** @brief Queue airflow to move to target */
+esp_err_t vent_button_control_move_airflow_to(vent_airflow_level_enum_t target_level);
 
-/** @brief Queue temperature to move to target */
-esp_err_t vent_button_control_move_temp_to(vent_temp_level_enum_t target_level);
+/** @brief Queue air temperature to move to target */
+esp_err_t vent_button_control_move_air_temp_to(vent_air_temp_level_enum_t target_level);
 
 /**
  * @brief Level a queued or in-progress move is working toward
@@ -53,10 +53,10 @@ esp_err_t vent_button_control_move_temp_to(vent_temp_level_enum_t target_level);
  * level in between. Consumers should report this target instead while it is set,
  * otherwise the reported value visibly walks through the intermediate levels.
  *
- * @return the target, or FAN_LEVEL_UNKNOWN / TEMP_LEVEL_UNKNOWN when idle
+ * @return the target, or AIRFLOW_LEVEL_UNKNOWN / AIR_TEMP_LEVEL_UNKNOWN when idle
  */
-vent_fan_level_enum_t vent_button_control_pending_fan(void);
-vent_temp_level_enum_t vent_button_control_pending_temp(void);
+vent_airflow_level_enum_t vent_button_control_pending_airflow(void);
+vent_air_temp_level_enum_t vent_button_control_pending_air_temp(void);
 
 #ifdef __cplusplus
 }

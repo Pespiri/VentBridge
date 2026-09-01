@@ -12,18 +12,18 @@ VentButton = vent_bridge_ns.class_("VentButton", button.Button, cg.Component)
 # Bare enumerators of vent_button_enum_t; emitted verbatim so the numeric values
 # are never duplicated here.
 BUTTON_TYPES = {
-    "fan_up": "BUTTON_FAN_UP",
-    "fan_down": "BUTTON_FAN_DOWN",
-    "temp_up": "BUTTON_TEMP_UP",
-    "temp_down": "BUTTON_TEMP_DOWN",
+    "airflow_up": "BUTTON_AIRFLOW_UP",
+    "airflow_down": "BUTTON_AIRFLOW_DOWN",
+    "air_temp_up": "BUTTON_AIR_TEMP_UP",
+    "air_temp_down": "BUTTON_AIR_TEMP_DOWN",
     "filter_long": "BUTTON_FILTER_LONG",
 }
 
 ICONS = {
-    "fan_up": "mdi:fan-plus",
-    "fan_down": "mdi:fan-minus",
-    "temp_up": "mdi:thermometer-plus",
-    "temp_down": "mdi:thermometer-minus",
+    "airflow_up": "mdi:fan-plus",
+    "airflow_down": "mdi:fan-minus",
+    "air_temp_up": "mdi:thermometer-plus",
+    "air_temp_down": "mdi:thermometer-minus",
     "filter_long": "mdi:air-filter",
 }
 

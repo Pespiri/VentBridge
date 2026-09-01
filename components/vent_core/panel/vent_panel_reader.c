@@ -65,7 +65,7 @@ esp_err_t vent_panel_reader_init(const vent_panel_reader_config_t *config) {
   if (!state_mutex) return ESP_ERR_NO_MEM;
 
   memset(&last_state, 0, sizeof(last_state));
-  last_state.temp_level = TEMP_LEVEL_UNKNOWN;
+  last_state.air_temp_level = AIR_TEMP_LEVEL_UNKNOWN;
 
   return vent_uart_driver_init(cfg.uart_port, cfg.rx_pin, cfg.tx_pin, cfg.baud_rate, cfg.rx_buffer_size, cfg.rx_idle_byte_times, &uart_event_queue);
 }
@@ -127,7 +127,7 @@ static void vent_panel_reader_task(void *arg) {
 
     uint16_t buttons = 0;
     if (byte_count >= VENT_PANEL_STATUS_FRAME_LEN + VENT_PANEL_BUTTON_FRAME_LEN && vent_panel_protocol_decode_button(chunk + VENT_PANEL_STATUS_FRAME_LEN, (size_t)(byte_count - VENT_PANEL_STATUS_FRAME_LEN), &buttons)) {
-      if (buttons & VENT_PANEL_BTN_FILTER_RESET) filter_reset_count++;
+      if (buttons & VENT_PANEL_BTN_FILTER_OVERRIDE) filter_reset_count++;
       ESP_LOGD(TAG, "panel button 0x%04x", (unsigned)buttons);
     }
 

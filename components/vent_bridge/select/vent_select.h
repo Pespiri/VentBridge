@@ -7,8 +7,8 @@
 namespace esphome {
   namespace vent_bridge {
     enum VentSelectType : uint8_t {
-      VENT_SELECT_FAN,
-      VENT_SELECT_TEMP,
+      VENT_SELECT_AIRFLOW,
+      VENT_SELECT_AIR_TEMP,
     };
 
     class VentSelect : public select::Select, public Component {

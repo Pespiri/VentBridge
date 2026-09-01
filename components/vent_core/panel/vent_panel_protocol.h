@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// Villavent/Systemair VR panel-bus status frame: FF 01 b2 b3 FF crc 00
+// Systemair Villavent VR panel-bus status frame: FF 01 b2 b3 FF crc 00
 // (CRC-8/MAXIM over bytes [0..4]). b2|b3<<8 forms a 16-bit state bitmap
 #define VENT_PANEL_STATUS_FRAME_LEN 7
 
@@ -15,11 +15,12 @@
 // back-to-back and the UART hands them over as one burst.
 #define VENT_PANEL_BUTTON_FRAME_LEN 6
 
-#define VENT_PANEL_BTN_TEMP_DOWN    0x0002
-#define VENT_PANEL_BTN_TEMP_UP      0x0004
-#define VENT_PANEL_BTN_FAN_DOWN     0x0008
-#define VENT_PANEL_BTN_FAN_UP       0x0010
-#define VENT_PANEL_BTN_FILTER_RESET 0x0200
+// Panel button bitmask definitions
+#define VENT_PANEL_BTN_AIR_TEMP_DOWN   0x0002
+#define VENT_PANEL_BTN_AIR_TEMP_UP     0x0004
+#define VENT_PANEL_BTN_AIRFLOW_DOWN    0x0008
+#define VENT_PANEL_BTN_AIRFLOW_UP      0x0010
+#define VENT_PANEL_BTN_FILTER_OVERRIDE 0x0200
 
 #ifdef __cplusplus
 extern "C" {
