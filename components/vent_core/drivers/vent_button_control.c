@@ -41,7 +41,7 @@ static volatile vent_air_temp_level_enum_t pending_air_temp = AIR_TEMP_LEVEL_UNK
  *
  * @return      GPIO pin number corresponding to the button, or GPIO_NUM_NC if not applicable
  */
-static gpio_num_t pin_for(vent_button_enum_t button);
+static gpio_num_t get_button_pin(vent_button_enum_t button);
 
 /** @brief Generate a press pulse for a given button
  *
@@ -117,7 +117,7 @@ vent_air_temp_level_enum_t vent_button_control_pending_air_temp(void) {
   return pending_air_temp;
 }
 
-static gpio_num_t pin_for(vent_button_enum_t button) {
+static gpio_num_t get_button_pin(vent_button_enum_t button) {
   switch (button) {
     // airflow control buttons
     case BUTTON_AIRFLOW_UP: return button_pins.airflow_up;
@@ -135,7 +135,7 @@ static gpio_num_t pin_for(vent_button_enum_t button) {
 }
 
 static void press_pulse(vent_button_enum_t button, uint32_t hold_ms) {
-  gpio_num_t pin = pin_for(button);
+  gpio_num_t pin = get_button_pin(button);
   if (pin == GPIO_NUM_NC) return;
 
   ESP_LOGD(TAG, "pulse button %d on GPIO %d for %lums", (int)button, (int)pin, (unsigned long)hold_ms);
@@ -146,14 +146,16 @@ static void press_pulse(vent_button_enum_t button, uint32_t hold_ms) {
 
 static void press_filter_long(void) {
   vent_panel_state_t start_state = vent_panel_reader_get_state();
-  gpio_num_t pin = pin_for(BUTTON_FILTER_LONG);
+  gpio_num_t pin = get_button_pin(BUTTON_FILTER_LONG);
   vent_gpio_set_state(pin, VENT_GPIO_HIGH);
 
   uint32_t waited_ms = 0;
   while (waited_ms < FILTER_LONG_TIMEOUT_MS) {
     vTaskDelay(pdMS_TO_TICKS(FILTER_LONG_POLL_MS));
     waited_ms += FILTER_LONG_POLL_MS;
-    if (vent_panel_reader_get_state().raw_value != start_state.raw_value) break;
+    if (vent_panel_reader_get_state().raw_value != start_state.raw_value) {
+      break;
+    }
   }
 
   vent_gpio_set_state(pin, VENT_GPIO_LOW);
@@ -169,7 +171,9 @@ static void move_airflow_to(vent_airflow_level_enum_t target_level) {
   vent_button_enum_t direction = target_level > current ? BUTTON_AIRFLOW_UP : BUTTON_AIRFLOW_DOWN;
   for (int i = 0; i < steps; i++) {
     press_pulse(direction, BUTTON_PRESS_MS);
-    if (i + 1 < steps) vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
+    if (i + 1 < steps) {
+      vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
+    }
   }
 
   // final level is only known once the panel reports it; returning earlier
@@ -190,7 +194,9 @@ static void move_air_temp_to(vent_air_temp_level_enum_t target_level) {
   vent_button_enum_t direction = target_level > current ? BUTTON_AIR_TEMP_UP : BUTTON_AIR_TEMP_DOWN;
   for (int i = 0; i < steps; i++) {
     press_pulse(direction, BUTTON_PRESS_MS);
-    if (i + 1 < steps) vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
+    if (i + 1 < steps) {
+      vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
+    }
   }
 
   // final level is only known once the panel reports it; returning earlier
@@ -207,19 +213,30 @@ static void vent_button_control_task(void *arg) {
   button_cmd_t cmd;
   for (;;) {
     if (xQueueReceive(cmd_queue, &cmd, portMAX_DELAY) != pdTRUE) continue;
+
     switch (cmd.type) {
-      case CMD_PRESS:
-        if (cmd.button == BUTTON_FILTER_LONG) press_filter_long();
-        else press_pulse(cmd.button, BUTTON_PRESS_MS);
+      case CMD_PRESS: {
+        if (cmd.button == BUTTON_FILTER_LONG) {
+          press_filter_long();
+        } else {
+          press_pulse(cmd.button, BUTTON_PRESS_MS);
+        }
         break;
-      case CMD_MOVE_AIRFLOW:
+      }
+      case CMD_MOVE_AIRFLOW: {
         move_airflow_to((vent_airflow_level_enum_t)cmd.target_level);
-        if (pending_airflow == (vent_airflow_level_enum_t)cmd.target_level) pending_airflow = AIRFLOW_LEVEL_UNKNOWN;
+        if (pending_airflow == (vent_airflow_level_enum_t)cmd.target_level) {
+          pending_airflow = AIRFLOW_LEVEL_UNKNOWN;
+        }
         break;
-      case CMD_MOVE_AIR_TEMP:
+      }
+      case CMD_MOVE_AIR_TEMP: {
         move_air_temp_to((vent_air_temp_level_enum_t)cmd.target_level);
-        if (pending_air_temp == (vent_air_temp_level_enum_t)cmd.target_level) pending_air_temp = AIR_TEMP_LEVEL_UNKNOWN;
+        if (pending_air_temp == (vent_air_temp_level_enum_t)cmd.target_level) {
+          pending_air_temp = AIR_TEMP_LEVEL_UNKNOWN;
+        }
         break;
+      }
     }
   }
 }

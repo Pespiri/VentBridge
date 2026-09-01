@@ -69,6 +69,15 @@ bool vent_panel_reader_get_trace(void);
  */
 uint32_t vent_panel_reader_filter_reset_count(void);
 
+/**
+ * @brief Filter replacement interval in months, or 0 if not observed yet
+ *
+ * The panel never reports the interval on its own. It does briefly show it on the
+ * temperature gauge while acknowledging a filter override or an interval change,
+ * which is the only opportunity to read it.
+ */
+uint8_t vent_panel_reader_filter_interval_months(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -41,6 +41,7 @@ namespace esphome {
       }
 
       vent_panel_state_t get_state() const { return vent_panel_reader_get_state(); }
+      uint8_t filter_interval_months() const { return vent_panel_reader_filter_interval_months(); }
       bool is_online() const { return vent_panel_reader_is_online(); }
 
       void set_airflow_level(vent_airflow_level_enum_t level) { vent_button_control_move_airflow_to(level); }

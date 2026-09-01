@@ -25,7 +25,9 @@ namespace esphome {
           if (level == AIR_TEMP_LEVEL_UNKNOWN) return;
           option = this->at((size_t)level);
         }
-        if (option) {
+        // Dedupe: select has no built-in change filter, and the panel re-sends
+        // the same state ~10x a second.
+        if (option && (!this->has_state() || this->current_option() != *option)) {
           this->publish_state(*option);
         }
       });

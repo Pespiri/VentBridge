@@ -16,9 +16,8 @@ typedef enum VENT_BUTTON_ENUM {
   BUTTON_AIRFLOW_DOWN,
   BUTTON_AIR_TEMP_UP,
   BUTTON_AIR_TEMP_DOWN,
-  // The panel ignores a short filter press by design; only the long press acts,
-  // clearing the filter replacement light. Held until the panel state changes,
-  // or a 10s timeout.
+  // Long press clears the filter replacement light. Held until the panel
+  // state changes, or a 10s timeout.
   BUTTON_FILTER_LONG,
 } vent_button_enum_t;
 

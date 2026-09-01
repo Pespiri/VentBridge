@@ -24,7 +24,7 @@ typedef struct VENT_PANEL_STATE {
   vent_airflow_level_enum_t airflow_level;
   vent_air_temp_level_enum_t air_temp_level;
   bool summer_on;
-  bool notification_on;
+  bool heater_battery_on;
   uint16_t raw_value;
   uint16_t unknown_bits;
 } vent_panel_state_t;

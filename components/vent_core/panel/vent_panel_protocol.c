@@ -1,8 +1,27 @@
 #include "vent_panel_protocol.h"
 
-// #define FILTER_ON_BIT       1 << ? // not observed (yet)
-#define SUMMER_ON_BIT       1 << 4 // 0b00010000
-#define NOTIFICATION_ON_BIT 1 << 5 // 0b00100000
+#define BIT(n) (1 << (n))
+
+// #define SIG_FILTER_ON_BIT      BIT(?) // not observed (yet)
+#define SIG_AIR_TEMP_LOW_BIT      BIT(1)
+#define SIG_AIR_TEMP_MED_BIT      BIT(2)
+#define SIG_AIR_TEMP_HIGH_BIT     BIT(3)
+#define SIG_SUMMER_ON_BIT         BIT(4)
+#define SIG_HEATER_BATTERY_ON_BIT BIT(5) // panel also flashes it on a setting change on user input, so a blink is not necessarily the heater cycling
+#define SIG_AIRFLOW_MIN_BIT       BIT(6)
+#define SIG_AIRFLOW_NORM_BIT      BIT(7)
+#define SIG_AIRFLOW_MAX_BIT       BIT(8)
+
+// known signal bits in the panel state bitmap
+#define SIG_KNOWN_BITS         \
+  (SIG_AIR_TEMP_LOW_BIT |      \
+   SIG_AIR_TEMP_MED_BIT |      \
+   SIG_AIR_TEMP_HIGH_BIT |     \
+   SIG_SUMMER_ON_BIT |         \
+   SIG_HEATER_BATTERY_ON_BIT | \
+   SIG_AIRFLOW_MIN_BIT |       \
+   SIG_AIRFLOW_NORM_BIT |      \
+   SIG_AIRFLOW_MAX_BIT)
 
 /** @brief Map the air temperature bits of the state bitmap to an air temperature level */
 static vent_air_temp_level_enum_t decode_air_temp_level(uint16_t value);
@@ -28,10 +47,11 @@ bool vent_panel_protocol_decode_status(const uint8_t *frame, size_t len, vent_pa
   uint16_t value = (uint16_t)frame[2] | ((uint16_t)frame[3] << 8);
   out_state->airflow_level = decode_airflow_level(value);
   out_state->air_temp_level = decode_air_temp_level(value);
-  out_state->summer_on = value & SUMMER_ON_BIT;
-  out_state->notification_on = value & NOTIFICATION_ON_BIT;
+  out_state->summer_on = value & SIG_SUMMER_ON_BIT;
+  out_state->heater_battery_on = value & SIG_HEATER_BATTERY_ON_BIT;
   out_state->raw_value = value;
-  out_state->unknown_bits = value & (uint16_t)~0x01FE;
+  out_state->unknown_bits = value & (uint16_t)~SIG_KNOWN_BITS;
+
   return true;
 }
 
@@ -45,19 +65,23 @@ bool vent_panel_protocol_decode_button(const uint8_t *frame, size_t len, uint16_
 }
 
 static vent_air_temp_level_enum_t decode_air_temp_level(uint16_t value) {
-  bool low = value & (1 << 1), medium = value & (1 << 2), high = value & (1 << 3);
+  bool low = value & SIG_AIR_TEMP_LOW_BIT,
+       medium = value & SIG_AIR_TEMP_MED_BIT,
+       high = value & SIG_AIR_TEMP_HIGH_BIT;
+
   if (!low && !medium && !high) return AIR_TEMP_LEVEL_NONE;
   if (low && !medium && !high) return AIR_TEMP_LEVEL_LOW;
   if (low && medium && !high) return AIR_TEMP_LEVEL_LOW_MED;
   if (!low && medium && !high) return AIR_TEMP_LEVEL_MED;
   if (!low && medium && high) return AIR_TEMP_LEVEL_MED_HIGH;
   if (!low && !medium && high) return AIR_TEMP_LEVEL_HIGH;
+
   return AIR_TEMP_LEVEL_UNKNOWN;
 }
 
 static vent_airflow_level_enum_t decode_airflow_level(uint16_t value) {
-  if (value & (1 << 6)) return AIRFLOW_LEVEL_MIN;
-  if (value & (1 << 7)) return AIRFLOW_LEVEL_NORM;
-  if (value & (1 << 8)) return AIRFLOW_LEVEL_MAX;
+  if (value & SIG_AIRFLOW_MIN_BIT) return AIRFLOW_LEVEL_MIN;
+  if (value & SIG_AIRFLOW_NORM_BIT) return AIRFLOW_LEVEL_NORM;
+  if (value & SIG_AIRFLOW_MAX_BIT) return AIRFLOW_LEVEL_MAX;
   return AIRFLOW_LEVEL_UNKNOWN;
 }

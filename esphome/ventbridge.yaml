@@ -67,17 +67,19 @@ binary_sensor:
     name: "Summer operation"
     icon: mdi:weather-sunny
   - platform: vent_bridge
-    type: notification
-    name: "Panel notification"
-    # Blinks at ~5Hz during the post-filter-reset animation; ride over it so the
-    # entity reads steadily rather than flapping across the API.
+    type: heater_battery
+    name: "Heater battery"
+    icon: mdi:heating-coil
+    # The panel reuses this LED to acknowledge a setting change, flashing it at
+    # ~5Hz. Ride over that so the entity reads steadily rather than flapping,
+    # at the cost of reporting a genuine heater-off up to 5s late.
     filters:
       - delayed_off: 5s
   - platform: vent_bridge
     type: filter_reset
     name: "Filter reset detected"
     entity_category: diagnostic
-    # The panel keeps its own 365-day timer but never puts it on the bus, so the
+    # The panel keeps its own timer but never puts it on the bus, so the
     # reset date is recorded here. This fires on the button frame the panel itself
     # emits, so it covers presses made at the wall panel as well as via HA - and
     # unlike watching the alarm clear, it works even if the alarm was never lit.
@@ -104,10 +106,42 @@ globals:
     type: uint32_t
     restore_value: true
     initial_value: "0"
+  # The panel only reveals the interval during a confirmation blink, so latch it
+  # when seen and keep it across reboots.
+  - id: filter_interval_months
+    type: uint8_t
+    restore_value: true
+    initial_value: "0"
+
+interval:
+  - interval: 30s
+    then:
+      - lambda: |-
+          uint8_t months = id(vent)->filter_interval_months();
+          // Publish on the spot: the sensors poll hourly, which is far too slow
+          // to reflect a change the user just made at the panel.
+          if (months != 0 && months != id(filter_interval_months)) {
+            id(filter_interval_months) = months;
+            id(filter_interval_sensor).update();
+            id(filter_days_sensor).update();
+          }
 
 sensor:
   - platform: template
+    name: "Filter interval"
+    id: filter_interval_sensor
+    unit_of_measurement: months
+    state_class: measurement
+    icon: mdi:calendar-range
+    accuracy_decimals: 0
+    update_interval: 1h
+    lambda: |-
+      if (id(filter_interval_months) == 0) return {};
+      return id(filter_interval_months);
+
+  - platform: template
     name: "Filter days remaining"
+    id: filter_days_sensor
     unit_of_measurement: d
     device_class: duration
     state_class: measurement
@@ -118,8 +152,11 @@ sensor:
       if (id(filter_reset_epoch) == 0) return {};
       auto now = id(ha_time).now();
       if (!now.is_valid()) return {};
+      // Until an interval has been observed, assume the 12-month maximum rather
+      // than reporting a countdown that is certainly wrong.
+      uint8_t months = id(filter_interval_months) ? id(filter_interval_months) : 12;
       int32_t elapsed = (int32_t)(now.timestamp - id(filter_reset_epoch));
-      return 365.0f - (elapsed / 86400.0f);
+      return (months * 30.4375f) - (elapsed / 86400.0f);
 
 wifi:
   ssid: !secret wifi_ssid

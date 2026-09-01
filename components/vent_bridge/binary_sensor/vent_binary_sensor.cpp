@@ -18,8 +18,8 @@ namespace esphome {
           case VENT_BINARY_SUMMER:
             this->publish_state(s.summer_on);
             break;
-          case VENT_BINARY_NOTIFICATION:
-            this->publish_state(s.notification_on);
+          case VENT_BINARY_HEATER_BATTERY:
+            this->publish_state(s.heater_battery_on);
             break;
           case VENT_BINARY_ONLINE:
             this->publish_state(this->parent_->is_online());

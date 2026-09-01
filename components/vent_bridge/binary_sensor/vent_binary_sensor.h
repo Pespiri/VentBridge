@@ -8,7 +8,7 @@ namespace esphome {
   namespace vent_bridge {
     enum VentBinarySensorType : uint8_t {
       VENT_BINARY_SUMMER,
-      VENT_BINARY_NOTIFICATION,
+      VENT_BINARY_HEATER_BATTERY,
       VENT_BINARY_ONLINE,
       // Momentary: pulses when the panel's own filter-reset button is seen on the bus.
       VENT_BINARY_FILTER_RESET,

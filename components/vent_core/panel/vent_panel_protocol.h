@@ -22,6 +22,10 @@
 #define VENT_PANEL_BTN_AIRFLOW_UP      0x0010
 #define VENT_PANEL_BTN_FILTER_OVERRIDE 0x0200
 
+// Filter + air temp up/down pressed together
+#define VENT_PANEL_BTN_FILTER_INTERVAL_DOWN 0x0020
+#define VENT_PANEL_BTN_FILTER_INTERVAL_UP   0x0040
+
 #ifdef __cplusplus
 extern "C" {
 #endif

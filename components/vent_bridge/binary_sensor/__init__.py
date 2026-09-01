@@ -14,7 +14,7 @@ VentBinarySensorType = vent_bridge_ns.enum("VentBinarySensorType")
 
 TYPES = {
     "summer": VentBinarySensorType.VENT_BINARY_SUMMER,
-    "notification": VentBinarySensorType.VENT_BINARY_NOTIFICATION,
+    "heater_battery": VentBinarySensorType.VENT_BINARY_HEATER_BATTERY,
     "online": VentBinarySensorType.VENT_BINARY_ONLINE,
     "filter_reset": VentBinarySensorType.VENT_BINARY_FILTER_RESET,
 }

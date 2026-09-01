@@ -5,7 +5,7 @@ unit, by tapping the wired control panel's bus with an ESP32.
 
 The unit has no network interface — the only thing it talks to is its wall panel. VentBridge
 listens on that bus, decodes the panel protocol, and exposes airflow, temperature,
-notification state and summer operation as native Home Assistant entities over WiFi.
+heater state and summer operation as native Home Assistant entities over WiFi.
 
 ---
 
@@ -100,7 +100,7 @@ pio run && pio run -t upload && pio device monitor
 | Temperature up / down | `button` | single step |
 | Filter reset | `button` | long press |
 | Summer operation | `binary_sensor` | read-only |
-| Panel notification | `binary_sensor` | notification LED; blinks after a filter reset |
+| Heater battery | `binary_sensor` | also flashes to acknowledge a setting change |
 | Filter reset detected | `binary_sensor` | `diagnostic`; pulses when a reset is seen on the bus |
 | Panel online | `binary_sensor` | `connectivity` |
 | Filter days remaining | `sensor` | days until the panel's 365-day warning |
@@ -120,7 +120,7 @@ USB serial, ESP-IDF build only.
 | Command | Description |
 | --- | --- |
 | `state` | Decoded panel state plus the raw bitmap |
-| `fan <min\|norm\|max>` | Move fan to a level |
+| `air <min\|norm\|max>` | Move air to a level |
 | `temp <0-5>` | Move heat recovery to a level |
 | `press <airup\|airdown\|tempup\|tempdown\|filterlong>` | Single button press |
 | `trace [on\|off]` | Hex-dump bus frames |
@@ -143,12 +143,13 @@ how the remaining fields get mapped.
 | --- | --- |
 | 1 / 2 / 3 | heat recovery low / medium / high (combined for the six levels) |
 | 4 | summer operation |
-| 5 | panel notification LED |
+| 5 | heater battery on |
 | 6 / 7 / 8 | fan min / norm / max |
 | 0, 9-15 | unmapped; never observed set |
 
-Bit 5 is the **notification** LED, not a filter indicator — it is what blinks during the
-post-reset animation. No filter-alarm bit has been observed on this unit.
+The panel also flashes **heater battery** LED to acknowledge a setting
+change on user input — for example after clearing the filter timer — so a blink there is a
+UI acknowledgement rather than the heater cycling.
 
 ### Button frame — panel to bus
 
@@ -166,8 +167,8 @@ Same CRC. The payload is a bitmask:
 | --- | --- |
 | `b1` bit 1 | temperature down |
 | `b1` bit 2 | temperature up |
-| `b1` bit 3 | fan down |
-| `b1` bit 4 | fan up |
+| `b1` bit 3 | airflow down |
+| `b1` bit 4 | airflow up |
 | `b2` bit 1 | filter (long) |
 
 > **Note** — button frames are decoded and understood, but VentBridge does **not** transmit
@@ -200,7 +201,7 @@ substitution in `esphome/ventbridge.yaml` and `board` in `platformio.ini`.
 | --- | --- |
 | Panel UART RX | 8 |
 | Panel UART TX | 9 |
-| Fan up / down | 2 / 3 |
+| Airflow up / down | 2 / 3 |
 | Temperature up / down | 4 / 5 |
 | Filter | 6 |
 

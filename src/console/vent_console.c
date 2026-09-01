@@ -113,7 +113,7 @@ static int cmd_state(int argc, char **argv) {
   printf("airflow:  %s (%d)\n", vent_panel_airflow_level_name(state.airflow_level), (int)state.airflow_level);
   printf("air temp: %s (%d)\n", vent_panel_air_temp_level_name(state.air_temp_level), (int)state.air_temp_level);
   printf("summer:   %s\n", state.summer_on ? "on" : "off");
-  printf("notify:   %s\n", state.notification_on ? "on" : "off");
+  printf("heater:   %s\n", state.heater_battery_on ? "on" : "off");
   printf("raw:      0x%04X (unknown bits 0x%04X)\n", state.raw_value, state.unknown_bits);
   return CONSOLE_OK;
 }
