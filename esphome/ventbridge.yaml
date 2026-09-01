@@ -99,6 +99,13 @@ binary_sensor:
 time:
   - platform: homeassistant
     id: ha_time
+    # The filter sensors' template lambdas need time and a restored global, both of
+    # which are only ready after this fires - without it they'd sit at "unknown"
+    # until the next hourly poll happens to land after time is valid.
+    on_time_sync:
+      - lambda: |-
+          id(filter_interval_sensor).update();
+          id(filter_days_sensor).update();
 
 globals:
   # Unix time of the last filter reset; survives reboots. 0 means never seen one.
