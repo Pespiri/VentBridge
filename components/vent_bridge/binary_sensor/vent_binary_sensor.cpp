@@ -15,17 +15,25 @@ namespace esphome {
 
       this->parent_->add_on_state_callback([this](const vent_panel_state_t &s) {
         switch (this->type_) {
-          case VENT_BINARY_SUMMER:
-            this->publish_state(s.summer_on);
+          case VENT_BINARY_SUMMER_OPERATION: {
+            this->publish_state(s.sig_summer_operation);
             break;
-          case VENT_BINARY_HEATER_BATTERY:
-            this->publish_state(s.heater_battery_on);
+          }
+          case VENT_BINARY_HEATER_BATTERY: {
+            this->publish_state(s.sig_heater_battery);
             break;
-          case VENT_BINARY_ONLINE:
+          }
+          case VENT_BINARY_FILTER_CHANGE: {
+            this->publish_state(s.sig_filter_change);
+            break;
+          }
+          case VENT_BINARY_ONLINE: {
             this->publish_state(this->parent_->is_online());
             break;
-          case VENT_BINARY_FILTER_RESET:
+          }
+          case VENT_BINARY_FILTER_RESET: {
             break;
+          }
         }
       });
     }

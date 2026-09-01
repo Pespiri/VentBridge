@@ -63,13 +63,14 @@ button:
 
 binary_sensor:
   - platform: vent_bridge
-    type: summer
+    type: summer_operation
     name: "Summer operation"
-    icon: mdi:weather-sunny
+  - platform: vent_bridge
+    type: filter_change
+    name: "Filter change"
   - platform: vent_bridge
     type: heater_battery
     name: "Heater battery"
-    icon: mdi:heating-coil
     # The panel reuses this LED to acknowledge a setting change, flashing it at
     # ~5Hz. Ride over that so the entity reads steadily rather than flapping,
     # at the cost of reporting a genuine heater-off up to 5s late.

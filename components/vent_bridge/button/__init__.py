@@ -29,9 +29,10 @@ ICONS = {
 
 
 def _default_icon(config):
-    if CONF_ICON not in config:
+    icon = ICONS.get(config[CONF_TYPE])
+    if icon is not None and CONF_ICON not in config:
         config = config.copy()
-        config[CONF_ICON] = ICONS[config[CONF_TYPE]]
+        config[CONF_ICON] = icon
     return config
 
 

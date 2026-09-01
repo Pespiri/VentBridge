@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import binary_sensor
-from esphome.const import CONF_TYPE
+from esphome.const import CONF_ICON, CONF_TYPE
 
 from .. import CONF_VENT_BRIDGE_ID, VentBridge, vent_bridge_ns
 
@@ -13,13 +13,29 @@ VentBinarySensor = vent_bridge_ns.class_(
 VentBinarySensorType = vent_bridge_ns.enum("VentBinarySensorType")
 
 TYPES = {
-    "summer": VentBinarySensorType.VENT_BINARY_SUMMER,
+    "summer_operation": VentBinarySensorType.VENT_BINARY_SUMMER_OPERATION,
     "heater_battery": VentBinarySensorType.VENT_BINARY_HEATER_BATTERY,
+    "filter_change": VentBinarySensorType.VENT_BINARY_FILTER_CHANGE,
     "online": VentBinarySensorType.VENT_BINARY_ONLINE,
     "filter_reset": VentBinarySensorType.VENT_BINARY_FILTER_RESET,
 }
 
-CONFIG_SCHEMA = (
+ICONS = {
+    "summer_operation": "mdi:weather-sunny",
+    "heater_battery": "mdi:heating-coil",
+    "filter_change": "mdi:air-filter",
+}
+
+
+def _default_icon(config):
+    icon = ICONS.get(config[CONF_TYPE])
+    if icon is not None and CONF_ICON not in config:
+        config = config.copy()
+        config[CONF_ICON] = icon
+    return config
+
+
+CONFIG_SCHEMA = cv.All(
     binary_sensor.binary_sensor_schema(VentBinarySensor)
     .extend(
         {
@@ -27,7 +43,8 @@ CONFIG_SCHEMA = (
             cv.Required(CONF_TYPE): cv.enum(TYPES, lower=True),
         }
     )
-    .extend(cv.COMPONENT_SCHEMA)
+    .extend(cv.COMPONENT_SCHEMA),
+    _default_icon,
 )
 
 

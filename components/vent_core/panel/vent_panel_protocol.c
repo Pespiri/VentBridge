@@ -1,26 +1,26 @@
 #include "vent_panel_protocol.h"
 
-#define BIT(n) (1 << (n))
+#define BIT(n)                   (1 << (n))
 
-// #define SIG_FILTER_ON_BIT      BIT(?) // not observed (yet)
-#define SIG_AIR_TEMP_LOW_BIT      BIT(1)
-#define SIG_AIR_TEMP_MED_BIT      BIT(2)
-#define SIG_AIR_TEMP_HIGH_BIT     BIT(3)
-#define SIG_SUMMER_ON_BIT         BIT(4)
-#define SIG_HEATER_BATTERY_ON_BIT BIT(5) // panel also flashes it on a setting change on user input, so a blink is not necessarily the heater cycling
-#define SIG_AIRFLOW_MIN_BIT       BIT(6)
-#define SIG_AIRFLOW_NORM_BIT      BIT(7)
-#define SIG_AIRFLOW_MAX_BIT       BIT(8)
+#define SIG_FILTER_ON_BIT        (BIT(0) | BIT(9)) // not observed (yet), most likely either bit 0 or 9 since the rest of the LED's are already mapped
+#define SIG_AIR_TEMP_LOW_BIT     BIT(1)
+#define SIG_AIR_TEMP_MED_BIT     BIT(2)
+#define SIG_AIR_TEMP_HIGH_BIT    BIT(3)
+#define SIG_SUMMER_OPERATION_BIT BIT(4)
+#define SIG_HEATER_BATTERY_BIT   BIT(5) // panel also flashes it on a setting change on user input, so a blink is not necessarily the heater cycling
+#define SIG_AIRFLOW_MIN_BIT      BIT(6)
+#define SIG_AIRFLOW_NORM_BIT     BIT(7)
+#define SIG_AIRFLOW_MAX_BIT      BIT(8)
 
 // known signal bits in the panel state bitmap
-#define SIG_KNOWN_BITS         \
-  (SIG_AIR_TEMP_LOW_BIT |      \
-   SIG_AIR_TEMP_MED_BIT |      \
-   SIG_AIR_TEMP_HIGH_BIT |     \
-   SIG_SUMMER_ON_BIT |         \
-   SIG_HEATER_BATTERY_ON_BIT | \
-   SIG_AIRFLOW_MIN_BIT |       \
-   SIG_AIRFLOW_NORM_BIT |      \
+#define SIG_KNOWN_BITS        \
+  (SIG_AIR_TEMP_LOW_BIT |     \
+   SIG_AIR_TEMP_MED_BIT |     \
+   SIG_AIR_TEMP_HIGH_BIT |    \
+   SIG_SUMMER_OPERATION_BIT | \
+   SIG_HEATER_BATTERY_BIT |   \
+   SIG_AIRFLOW_MIN_BIT |      \
+   SIG_AIRFLOW_NORM_BIT |     \
    SIG_AIRFLOW_MAX_BIT)
 
 /** @brief Map the air temperature bits of the state bitmap to an air temperature level */
@@ -47,8 +47,9 @@ bool vent_panel_protocol_decode_status(const uint8_t *frame, size_t len, vent_pa
   uint16_t value = (uint16_t)frame[2] | ((uint16_t)frame[3] << 8);
   out_state->airflow_level = decode_airflow_level(value);
   out_state->air_temp_level = decode_air_temp_level(value);
-  out_state->summer_on = value & SIG_SUMMER_ON_BIT;
-  out_state->heater_battery_on = value & SIG_HEATER_BATTERY_ON_BIT;
+  out_state->sig_summer_operation = value & SIG_SUMMER_OPERATION_BIT;
+  out_state->sig_heater_battery = value & SIG_HEATER_BATTERY_BIT;
+  out_state->sig_filter_change = value & SIG_FILTER_ON_BIT;
   out_state->raw_value = value;
   out_state->unknown_bits = value & (uint16_t)~SIG_KNOWN_BITS;
 

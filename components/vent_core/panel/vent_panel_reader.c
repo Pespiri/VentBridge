@@ -37,7 +37,7 @@ static volatile uint32_t filter_reset_count = 0;
 static volatile uint8_t filter_interval_months = 0;
 static volatile int64_t ack_until_us = 0; // timestamp until which the acknowledgment window is active
 
-static volatile bool trace_enabled = false;
+static volatile bool dbg_trace_enabled = false;
 
 /** @brief Publish a freshly decoded state and mark the bus as alive */
 static void apply_decoded_state(const vent_panel_state_t *decoded);
@@ -62,11 +62,11 @@ bool vent_panel_reader_is_online(void) {
 }
 
 void vent_panel_reader_set_trace(bool enabled) {
-  trace_enabled = enabled;
+  dbg_trace_enabled = enabled;
 }
 
 bool vent_panel_reader_get_trace(void) {
-  return trace_enabled;
+  return dbg_trace_enabled;
 }
 
 uint32_t vent_panel_reader_filter_reset_count(void) {
@@ -127,7 +127,7 @@ static void vent_panel_reader_task(void *arg) {
   uint32_t trace_repeats = 0;
   bool trace_was_on = false;
   vent_air_temp_level_enum_t held_air_temp = AIR_TEMP_LEVEL_UNKNOWN;
-  bool prev_heater_on = false;
+  bool prev_sig_heater_battery = false;
 
   ESP_LOGI(TAG, "panel reader task started");
 
@@ -177,7 +177,7 @@ static void vent_panel_reader_task(void *arg) {
       if (esp_timer_get_time() < ack_until_us) {
         // Only while already acknowledging: the heater LED also toggles in normal
         // operation, just nowhere near this fast.
-        if (decoded.heater_battery_on != prev_heater_on) {
+        if (decoded.sig_heater_battery != prev_sig_heater_battery) {
           ack_until_us = esp_timer_get_time() + ACK_EXTEND_US;
         }
 
@@ -196,11 +196,11 @@ static void vent_panel_reader_task(void *arg) {
       } else {
         held_air_temp = decoded.air_temp_level;
       }
-      prev_heater_on = decoded.heater_battery_on;
+      prev_sig_heater_battery = decoded.sig_heater_battery;
       apply_decoded_state(&decoded);
     }
 
-    bool trace_on = trace_enabled;
+    bool trace_on = dbg_trace_enabled;
     if (trace_on != trace_was_on) {
       trace_prev_len = 0;
       trace_repeats = 0;
