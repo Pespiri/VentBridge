@@ -1,7 +1,7 @@
 substitutions:
   name: ventbridge
-  # Swap to esp32-c6-devkitc-1 (or your C6 board) when the hardware arrives.
-  board: seeed_xiao_esp32s3
+  # Seeed Studio XIAO ESP32-C6.
+  board: seeed_xiao_esp32c6
   # Overridden per build with `-s version <git tag>`; see scripts/esphome_targets.py.
   version: dev
 
@@ -17,6 +17,7 @@ esp32:
   board: ${board}
   framework:
     type: esp-idf
+    version: 6.1.0
 
 external_components:
   - source:
@@ -27,14 +28,14 @@ external_components:
 vent_bridge:
   id: vent
   uart_port: 1
-  rx_pin: GPIO8
-  tx_pin: GPIO9
+  rx_pin: GPIO17
+  tx_pin: GPIO19
   baud_rate: 4800
-  airflow_up_pin: GPIO2
-  airflow_down_pin: GPIO3
-  air_temp_up_pin: GPIO4
-  air_temp_down_pin: GPIO5
-  filter_pin: GPIO6
+  air_temp_up_pin: GPIO01
+  air_temp_down_pin: GPIO02
+  airflow_up_pin: GPIO23
+  airflow_down_pin: GPIO22
+  filter_pin: GPIO21
 
 select:
   - platform: vent_bridge

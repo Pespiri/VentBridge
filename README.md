@@ -194,16 +194,15 @@ ff 01 12 01 ff b2 00
 
 ## Hardware
 
-Currently a **Seeed XIAO ESP32-S3**; target is an **ESP32-C6**. Switch with the `board`
-substitution in `esphome/ventbridge.yaml` and `board` in `platformio.ini`.
+Target board: **Seeed Studio XIAO ESP32-C6**.
 
 | Signal | GPIO |
 | --- | --- |
-| Panel UART RX | 8 |
-| Panel UART TX | 9 |
-| Airflow up / down | 2 / 3 |
-| Temperature up / down | 4 / 5 |
-| Filter | 6 |
+| Panel UART RX | 17 |
+| Panel UART TX | 19 |
+| Airflow up / down | 23 / 22 |
+| Temperature up / down | 1 / 2 |
+| Filter | 21 |
 
 Pins are configured in YAML for the ESPHome build and in `src/project_config.h` for the
 ESP-IDF app; keep them in step.

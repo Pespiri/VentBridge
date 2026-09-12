@@ -3,14 +3,14 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 
-#define AIRFLOW_UP_PIN                GPIO_NUM_2
-#define AIRFLOW_DOWN_PIN              GPIO_NUM_3
-#define AIR_TEMP_UP_PIN               GPIO_NUM_4
-#define AIR_TEMP_DOWN_PIN             GPIO_NUM_5
-#define FILTER_PIN                    GPIO_NUM_6
+#define AIR_TEMP_UP_PIN               GPIO_NUM_1
+#define AIR_TEMP_DOWN_PIN             GPIO_NUM_2
+#define AIRFLOW_UP_PIN                GPIO_NUM_23
+#define AIRFLOW_DOWN_PIN              GPIO_NUM_22
+#define FILTER_PIN                    GPIO_NUM_21
 
-#define UART_RX_PIN                   GPIO_NUM_8
-#define UART_TX_PIN                   GPIO_NUM_9
+#define UART_RX_PIN                   GPIO_NUM_17
+#define UART_TX_PIN                   GPIO_NUM_19
 
 #define PANEL_UART_PORT               UART_NUM_1
 #define PANEL_UART_BAUD_RATE          4800
