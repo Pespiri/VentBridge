@@ -3,6 +3,12 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 
+/* Seeed XIAO ESP32-C6 antenna path. GPIO14 selects onboard vs u.FL, but only while
+ * GPIO3 holds the RF switch powered. Neither pin is usable for anything else. */
+#define ANTENNA_RF_SWITCH_PIN         GPIO_NUM_3
+#define ANTENNA_SELECT_PIN            GPIO_NUM_14
+#define ANTENNA_USE_EXTERNAL          true
+
 #define AIR_TEMP_UP_PIN               GPIO_NUM_1
 #define AIR_TEMP_DOWN_PIN             GPIO_NUM_2
 #define AIRFLOW_UP_PIN                GPIO_NUM_23
@@ -38,6 +44,12 @@
     .air_temp_up = AIR_TEMP_UP_PIN,     \
     .air_temp_down = AIR_TEMP_DOWN_PIN, \
     .filter = FILTER_PIN,               \
+  }
+
+#define VENT_ANTENNA_PINS_DEFAULT              \
+  {                                            \
+    .rf_switch_enable = ANTENNA_RF_SWITCH_PIN, \
+    .select = ANTENNA_SELECT_PIN,              \
   }
 
 /** Task priorities */

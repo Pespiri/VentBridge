@@ -1,4 +1,5 @@
 #include "console/vent_console.h"
+#include "drivers/vent_antenna.h"
 #include "drivers/vent_button_control.h"
 #include "panel/vent_panel_reader.h"
 #include "project_config.h"
@@ -12,12 +13,14 @@ void app_main(void);
 void app_main(void) {
   static const vent_panel_reader_config_t panel_config = VENT_PANEL_READER_CONFIG_DEFAULT;
   static const vent_button_pins_t button_pins = VENT_BUTTON_PINS_DEFAULT;
+  static const vent_antenna_pins_t antenna_pins = VENT_ANTENNA_PINS_DEFAULT;
 
   LOGN(TAG, "-------------   META   -------------");
   LOGN(TAG, "name:           " PROJECT_NAME);
   LOGN(TAG, "firmware:       " FW_VERSION);
   LOGN(TAG, "------------------------------------");
 
+  ESP_ERROR_CHECK(vent_antenna_select(&antenna_pins, ANTENNA_USE_EXTERNAL));
   ESP_ERROR_CHECK(vent_panel_reader_init(&panel_config));
   ESP_ERROR_CHECK(vent_button_control_init(&button_pins));
 

@@ -6,6 +6,7 @@
 #include <atomic>
 
 extern "C" {
+#include "drivers/vent_antenna.h"
 #include "drivers/vent_button_control.h"
 #include "panel/vent_panel_reader.h"
 }

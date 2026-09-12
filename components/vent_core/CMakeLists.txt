@@ -1,5 +1,6 @@
 idf_component_register(
   SRCS
+    "drivers/vent_antenna.c"
     "drivers/vent_button_control.c"
     "drivers/vent_gpio_driver.c"
     "drivers/vent_uart_driver.c"

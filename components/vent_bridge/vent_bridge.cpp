@@ -7,11 +7,24 @@ namespace esphome {
 
     static const char *const TAG = "vent_bridge";
 
+    /* Seeed XIAO ESP32-C6 antenna path: GPIO14 picks onboard vs u.FL, and only while
+     * GPIO3 keeps the RF switch powered. */
+    static constexpr vent_antenna_pins_t ANTENNA_PINS = {
+      .rf_switch_enable = GPIO_NUM_3,
+      .select = GPIO_NUM_14,
+    };
+    static constexpr bool USE_EXTERNAL_ANTENNA = true;
+
     void VentBridge::setup() {
       // ESPHome leaves the IDF runtime log level at ERROR; opt these tags in so the
       // driver's ESP_LOGx output reaches `esphome logs` over the network.
       esp_log_level_set("vent_panel_reader", ESP_LOG_DEBUG);
       esp_log_level_set("vent_button_control", ESP_LOG_DEBUG);
+      esp_log_level_set("vent_antenna", ESP_LOG_DEBUG);
+
+      if (vent_antenna_select(&ANTENNA_PINS, USE_EXTERNAL_ANTENNA) != ESP_OK) {
+        ESP_LOGW(TAG, "antenna select failed");
+      }
 
       this->reader_config_.rx_buffer_size = 1024;
       this->reader_config_.rx_idle_byte_times = 2;
