@@ -8,8 +8,8 @@
 
 static const char *const TAG = "vent_button_control";
 
-#define BUTTON_PRESS_MS        120   // 120 milliseconds
-#define BUTTON_STEP_GAP_MS     300   // 300 milliseconds
+#define BUTTON_PRESS_MS        200   // 200 milliseconds
+#define BUTTON_STEP_GAP_MS     120   // 120 milliseconds
 #define FILTER_LONG_TIMEOUT_MS 10000 // 10 seconds
 #define FILTER_LONG_POLL_MS    50    // 50 milliseconds
 #define MOVE_SETTLE_TIMEOUT_MS 2000  // 2 seconds
@@ -171,9 +171,7 @@ static void move_airflow_to(vent_airflow_level_enum_t target_level) {
   vent_button_enum_t direction = target_level > current ? BUTTON_AIRFLOW_UP : BUTTON_AIRFLOW_DOWN;
   for (int i = 0; i < steps; i++) {
     press_pulse(direction, BUTTON_PRESS_MS);
-    if (i + 1 < steps) {
-      vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
-    }
+    vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
   }
 
   // final level is only known once the panel reports it; returning earlier
@@ -194,9 +192,7 @@ static void move_air_temp_to(vent_air_temp_level_enum_t target_level) {
   vent_button_enum_t direction = target_level > current ? BUTTON_AIR_TEMP_UP : BUTTON_AIR_TEMP_DOWN;
   for (int i = 0; i < steps; i++) {
     press_pulse(direction, BUTTON_PRESS_MS);
-    if (i + 1 < steps) {
-      vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
-    }
+    vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
   }
 
   // final level is only known once the panel reports it; returning earlier
@@ -221,6 +217,7 @@ static void vent_button_control_task(void *arg) {
         } else {
           press_pulse(cmd.button, BUTTON_PRESS_MS);
         }
+        vTaskDelay(pdMS_TO_TICKS(BUTTON_STEP_GAP_MS));
         break;
       }
       case CMD_MOVE_AIRFLOW: {
