@@ -13,7 +13,7 @@ namespace esphome {
       .rf_switch_enable = GPIO_NUM_3,
       .select = GPIO_NUM_14,
     };
-    static constexpr bool USE_EXTERNAL_ANTENNA = true;
+    static constexpr bool USE_EXTERNAL_ANTENNA = false;
 
     void VentBridge::setup() {
       // ESPHome leaves the IDF runtime log level at ERROR; opt these tags in so the

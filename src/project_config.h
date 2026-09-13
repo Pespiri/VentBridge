@@ -7,7 +7,7 @@
  * GPIO3 holds the RF switch powered. Neither pin is usable for anything else. */
 #define ANTENNA_RF_SWITCH_PIN         GPIO_NUM_3
 #define ANTENNA_SELECT_PIN            GPIO_NUM_14
-#define ANTENNA_USE_EXTERNAL          true
+#define ANTENNA_USE_EXTERNAL          false
 
 #define AIR_TEMP_UP_PIN               GPIO_NUM_1
 #define AIR_TEMP_DOWN_PIN             GPIO_NUM_2
