@@ -3,14 +3,20 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 
-#define FAN_SPEED_UP_PIN              GPIO_NUM_2
-#define FAN_SPEED_DOWN_PIN            GPIO_NUM_3
-#define TEMP_UP_PIN                   GPIO_NUM_4
-#define TEMP_DOWN_PIN                 GPIO_NUM_5
-#define FILTER_PIN                    GPIO_NUM_6
+/* Seeed XIAO ESP32-C6 antenna path. GPIO14 selects onboard vs u.FL, but only while
+ * GPIO3 holds the RF switch powered. Neither pin is usable for anything else. */
+#define ANTENNA_RF_SWITCH_PIN         GPIO_NUM_3
+#define ANTENNA_SELECT_PIN            GPIO_NUM_14
+#define ANTENNA_USE_EXTERNAL          false
 
-#define UART_RX_PIN                   GPIO_NUM_8
-#define UART_TX_PIN                   GPIO_NUM_9
+#define AIR_TEMP_UP_PIN               GPIO_NUM_1
+#define AIR_TEMP_DOWN_PIN             GPIO_NUM_2
+#define AIRFLOW_UP_PIN                GPIO_NUM_23
+#define AIRFLOW_DOWN_PIN              GPIO_NUM_22
+#define FILTER_PIN                    GPIO_NUM_21
+
+#define UART_RX_PIN                   GPIO_NUM_17
+#define UART_TX_PIN                   GPIO_NUM_19
 
 #define PANEL_UART_PORT               UART_NUM_1
 #define PANEL_UART_BAUD_RATE          4800
@@ -31,13 +37,19 @@
     .read_timeout_ms = PANEL_UART_READ_TIMEOUT_MS,       \
   }
 
-#define VENT_BUTTON_PINS_DEFAULT    \
-  {                                 \
-    .fan_up = FAN_SPEED_UP_PIN,     \
-    .fan_down = FAN_SPEED_DOWN_PIN, \
-    .temp_up = TEMP_UP_PIN,         \
-    .temp_down = TEMP_DOWN_PIN,     \
-    .filter = FILTER_PIN,           \
+#define VENT_BUTTON_PINS_DEFAULT        \
+  {                                     \
+    .airflow_up = AIRFLOW_UP_PIN,       \
+    .airflow_down = AIRFLOW_DOWN_PIN,   \
+    .air_temp_up = AIR_TEMP_UP_PIN,     \
+    .air_temp_down = AIR_TEMP_DOWN_PIN, \
+    .filter = FILTER_PIN,               \
+  }
+
+#define VENT_ANTENNA_PINS_DEFAULT              \
+  {                                            \
+    .rf_switch_enable = ANTENNA_RF_SWITCH_PIN, \
+    .select = ANTENNA_SELECT_PIN,              \
   }
 
 /** Task priorities */

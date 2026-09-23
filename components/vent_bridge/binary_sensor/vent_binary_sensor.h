@@ -1,0 +1,30 @@
+#pragma once
+
+#include "../vent_bridge.h"
+#include "esphome/components/binary_sensor/binary_sensor.h"
+#include "esphome/core/component.h"
+
+namespace esphome {
+  namespace vent_bridge {
+    enum VentBinarySensorType : uint8_t {
+      VENT_BINARY_SUMMER_OPERATION,
+      VENT_BINARY_HEATER_BATTERY,
+      VENT_BINARY_FILTER_CHANGE,
+      VENT_BINARY_ONLINE,
+      // Momentary: pulses when the panel's own filter-reset button is seen on the bus.
+      VENT_BINARY_FILTER_RESET,
+    };
+
+    class VentBinarySensor : public binary_sensor::BinarySensor, public Component {
+    public:
+      explicit VentBinarySensor(VentBinarySensorType type) : type_(type) {}
+
+      void set_parent(VentBridge *parent) { this->parent_ = parent; }
+      void setup() override;
+
+    protected:
+      VentBridge *parent_{nullptr};
+      const VentBinarySensorType type_;
+    };
+  } // namespace vent_bridge
+} // namespace esphome

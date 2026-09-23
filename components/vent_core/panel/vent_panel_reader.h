@@ -60,6 +60,24 @@ bool vent_panel_reader_is_online(void);
 void vent_panel_reader_set_trace(bool enabled);
 bool vent_panel_reader_get_trace(void);
 
+/**
+ * @brief Number of filter-reset presses seen coming from the panel itself
+ *
+ * Monotonic, so a consumer can poll it and act on any increase without needing
+ * to clear anything. Counts the button frame on the bus, which is authoritative:
+ * it fires even when the filter alarm was not lit, unlike watching the alarm clear.
+ */
+uint32_t vent_panel_reader_filter_reset_count(void);
+
+/**
+ * @brief Filter replacement interval in months, or 0 if not observed yet
+ *
+ * The panel never reports the interval on its own. It does briefly show it on the
+ * temperature gauge while acknowledging a filter override or an interval change,
+ * which is the only opportunity to read it.
+ */
+uint8_t vent_panel_reader_filter_interval_months(void);
+
 #ifdef __cplusplus
 }
 #endif

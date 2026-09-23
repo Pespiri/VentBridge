@@ -9,18 +9,35 @@
 
 static const char *const TAG = "vent_panel_reader";
 
-#define PANEL_CHUNK_MAX_LEN     32
-#define PANEL_ONLINE_TIMEOUT_US (3000 * 1000)
-#define TRACE_REPEAT_INTERVAL   100
+#define PANEL_CHUNK_MAX_LEN       32
+#define PANEL_ONLINE_TIMEOUT_US   (3000 * 1000)
+#define TRACE_REPEAT_INTERVAL     100
+
+#define FILTER_INTERVAL_6_MONTHS  6
+#define FILTER_INTERVAL_9_MONTHS  9
+#define FILTER_INTERVAL_12_MONTHS 12
+
+// While acknowledging a filter reset or interval change the panel repurposes
+// the temperature gauge to show the filter interval, so the real setting has to
+// be held across that window.
+#define ACK_WINDOW_US (3000 * 1000)
+// The animation outlives a fixed window, so keep it open while the heater LED is
+// still blinking and let it lapse shortly after the blinking stops.
+#define ACK_EXTEND_US (1000 * 1000)
 
 static SemaphoreHandle_t state_mutex;
-static QueueHandle_t uart_event_queue = NULL;
-static vent_panel_state_t last_state;
-static volatile int64_t last_frame_us = 0;
-static vent_panel_reader_config_t cfg;
-static vent_panel_state_cb_t state_cb = NULL;
 static void *state_cb_ctx = NULL;
-static volatile bool trace_enabled = false;
+static vent_panel_state_cb_t state_cb = NULL;
+
+static QueueHandle_t uart_event_queue = NULL;
+static vent_panel_reader_config_t cfg;
+static volatile int64_t last_frame_us = 0;
+static vent_panel_state_t last_state;
+static volatile uint32_t filter_reset_count = 0;
+static volatile uint8_t filter_interval_months = 0;
+static volatile int64_t ack_until_us = 0; // timestamp until which the acknowledgment window is active
+
+static volatile bool dbg_trace_enabled = false;
 
 /** @brief Publish a freshly decoded state and mark the bus as alive */
 static void apply_decoded_state(const vent_panel_state_t *decoded);
@@ -45,11 +62,19 @@ bool vent_panel_reader_is_online(void) {
 }
 
 void vent_panel_reader_set_trace(bool enabled) {
-  trace_enabled = enabled;
+  dbg_trace_enabled = enabled;
 }
 
 bool vent_panel_reader_get_trace(void) {
-  return trace_enabled;
+  return dbg_trace_enabled;
+}
+
+uint32_t vent_panel_reader_filter_reset_count(void) {
+  return filter_reset_count;
+}
+
+uint8_t vent_panel_reader_filter_interval_months(void) {
+  return filter_interval_months;
 }
 
 esp_err_t vent_panel_reader_init(const vent_panel_reader_config_t *config) {
@@ -60,9 +85,16 @@ esp_err_t vent_panel_reader_init(const vent_panel_reader_config_t *config) {
   if (!state_mutex) return ESP_ERR_NO_MEM;
 
   memset(&last_state, 0, sizeof(last_state));
-  last_state.temp_level = TEMP_LEVEL_UNKNOWN;
+  last_state.air_temp_level = AIR_TEMP_LEVEL_UNKNOWN;
 
-  return vent_uart_driver_init(cfg.uart_port, cfg.rx_pin, cfg.tx_pin, cfg.baud_rate, cfg.rx_buffer_size, cfg.rx_idle_byte_times, &uart_event_queue);
+  return vent_uart_driver_init(
+    cfg.uart_port,
+    cfg.rx_pin,
+    cfg.tx_pin,
+    cfg.baud_rate,
+    cfg.rx_buffer_size,
+    cfg.rx_idle_byte_times,
+    &uart_event_queue);
 }
 
 void vent_panel_reader_set_state_callback(vent_panel_state_cb_t callback, void *ctx) {
@@ -94,6 +126,8 @@ static void vent_panel_reader_task(void *arg) {
   int trace_prev_len = 0;
   uint32_t trace_repeats = 0;
   bool trace_was_on = false;
+  vent_air_temp_level_enum_t held_air_temp = AIR_TEMP_LEVEL_UNKNOWN;
+  bool prev_sig_heater_battery = false;
 
   ESP_LOGI(TAG, "panel reader task started");
 
@@ -113,14 +147,60 @@ static void vent_panel_reader_task(void *arg) {
     if (byte_count <= 0) continue;
 
     // drop any remainder of an oversized burst so the next event starts frame-aligned
-    if (event.size > sizeof(chunk)) uart_flush_input(cfg.uart_port);
+    if (event.size > sizeof(chunk)) {
+      uart_flush_input(cfg.uart_port);
+    }
+
+    uint16_t buttons = 0;
+    bool have_buttons = false;
+    if (byte_count >= VENT_PANEL_STATUS_FRAME_LEN + VENT_PANEL_BUTTON_FRAME_LEN) {
+      have_buttons = vent_panel_protocol_decode_button(chunk + VENT_PANEL_STATUS_FRAME_LEN, (size_t)(byte_count - VENT_PANEL_STATUS_FRAME_LEN), &buttons);
+    } else if (byte_count >= VENT_PANEL_BUTTON_FRAME_LEN) {
+      // Usually the button frame rides along with a status frame, but nothing
+      // guarantees the driver groups them into a single chunk.
+      have_buttons = vent_panel_protocol_decode_button(chunk, (size_t)byte_count, &buttons);
+    }
+    if (have_buttons) {
+      if (buttons & VENT_PANEL_BTN_FILTER_OVERRIDE) {
+        filter_reset_count++;
+      }
+      if (buttons & (VENT_PANEL_BTN_FILTER_OVERRIDE | VENT_PANEL_BTN_FILTER_INTERVAL_UP | VENT_PANEL_BTN_FILTER_INTERVAL_DOWN)) {
+        ack_until_us = esp_timer_get_time() + ACK_WINDOW_US;
+      }
+      ESP_LOGI(TAG, "panel button 0x%04x", (unsigned)buttons);
+    }
 
     vent_panel_state_t decoded;
-    bool decoded_ok = byte_count == VENT_PANEL_STATUS_FRAME_LEN &&
-                      vent_panel_protocol_decode_status(chunk, (size_t)byte_count, &decoded);
-    if (decoded_ok) apply_decoded_state(&decoded);
+    bool decoded_ok = byte_count >= VENT_PANEL_STATUS_FRAME_LEN &&
+                      vent_panel_protocol_decode_status(chunk, VENT_PANEL_STATUS_FRAME_LEN, &decoded);
+    if (decoded_ok) {
+      if (esp_timer_get_time() < ack_until_us) {
+        // Only while already acknowledging: the heater LED also toggles in normal
+        // operation, just nowhere near this fast.
+        if (decoded.sig_heater_battery != prev_sig_heater_battery) {
+          ack_until_us = esp_timer_get_time() + ACK_EXTEND_US;
+        }
 
-    bool trace_on = trace_enabled;
+        uint8_t observed_interval = 0;
+        switch (decoded.air_temp_level) {
+          case AIR_TEMP_LEVEL_LOW: observed_interval = FILTER_INTERVAL_6_MONTHS; break;
+          case AIR_TEMP_LEVEL_MED: observed_interval = FILTER_INTERVAL_9_MONTHS; break;
+          case AIR_TEMP_LEVEL_HIGH: observed_interval = FILTER_INTERVAL_12_MONTHS; break;
+          default: break;
+        }
+        if (observed_interval != 0 && observed_interval != filter_interval_months) {
+          filter_interval_months = observed_interval;
+          ESP_LOGI(TAG, "filter interval observed: %u months", (unsigned)observed_interval);
+        }
+        decoded.air_temp_level = held_air_temp;
+      } else {
+        held_air_temp = decoded.air_temp_level;
+      }
+      prev_sig_heater_battery = decoded.sig_heater_battery;
+      apply_decoded_state(&decoded);
+    }
+
+    bool trace_on = dbg_trace_enabled;
     if (trace_on != trace_was_on) {
       trace_prev_len = 0;
       trace_repeats = 0;
@@ -131,10 +211,13 @@ static void vent_panel_reader_task(void *arg) {
       bool same = byte_count == trace_prev_len && memcmp(chunk, trace_prev, (size_t)byte_count) == 0;
       if (same) {
         trace_repeats++;
-        if (trace_repeats % TRACE_REPEAT_INTERVAL == 0)
+        if (trace_repeats % TRACE_REPEAT_INTERVAL == 0) {
           ESP_LOGI(TAG, "(same frame seen %lu times so far)", (unsigned long)trace_repeats);
+        }
       } else {
-        if (trace_repeats > 1) ESP_LOGI(TAG, "(last frame seen %lu times)", (unsigned long)trace_repeats);
+        if (trace_repeats > 1) {
+          ESP_LOGI(TAG, "(last frame seen %lu times)", (unsigned long)trace_repeats);
+        }
         ESP_LOGI(TAG, "rx %d byte%s%s", byte_count, byte_count == 1 ? "" : "s", decoded_ok ? "" : " (undecoded)");
         ESP_LOG_BUFFER_HEX_LEVEL(TAG, chunk, (uint16_t)byte_count, ESP_LOG_INFO);
         memcpy(trace_prev, chunk, (size_t)byte_count);
